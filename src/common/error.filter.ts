@@ -34,12 +34,23 @@ export class ErrorFilter implements ExceptionFilter {
         typeof exceptionResponse === 'string'
           ? exceptionResponse
           : exceptionResponse.message || 'An error occurred';
-      response.status(statusCode).json({
-        success: false,
-        errors: {
-          message: message,
-        },
-      });
+
+      if (statusCode === 400 && typeof message !== 'string') {
+        response.status(statusCode).json({
+          success: false,
+          errors: {
+            message: 'Validation Error',
+            details: message,
+          },
+        });
+      } else {
+        response.status(statusCode).json({
+          success: false,
+          errors: {
+            message: message,
+          },
+        });
+      }
     }
     // --- Start of Handling Prisma or Database Error
     else if (exception instanceof PrismaClientKnownRequestError) {

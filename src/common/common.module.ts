@@ -1,4 +1,9 @@
-import { Global, Module, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  Global,
+  Module,
+  ValidationPipe,
+} from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { WinstonModule } from 'nest-winston';
 import winston from 'winston';
@@ -21,6 +26,14 @@ import { ErrorFilter } from './error.filter';
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
+        stopAtFirstError: true,
+        exceptionFactory: (errors) => {
+          const result = errors.map((error) => ({
+            property: error.property,
+            message: error.constraints[Object.keys(error.constraints)[0]],
+          }));
+          return new BadRequestException(result);
+        },
       }),
     },
   ],
