@@ -40,7 +40,7 @@ import { ErrorFilter } from './error.filter';
   exports: [PrismaService],
   imports: [
     WinstonModule.forRoot({
-      format: winston.format.prettyPrint({ depth: 5 }),
+      format: winston.format.prettyPrint({ depth: 5, colorize: true }),
       transports: [new winston.transports.Console()],
     }),
     ConfigModule.forRoot({
