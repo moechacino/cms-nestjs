@@ -40,7 +40,17 @@ import { ErrorFilter } from './error.filter';
   exports: [PrismaService],
   imports: [
     WinstonModule.forRoot({
-      format: winston.format.prettyPrint({ depth: 5, colorize: true }),
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.timestamp(),
+        winston.format.printf((info) => {
+          if (info.level === 'warn' || info.level === 'error') {
+            winston.format.prettyPrint();
+            return `${info.timestamp} [${info.level}]: \n ${JSON.stringify(info.message)}`;
+          }
+          return `${info.timestamp} [${info.level}]: ${JSON.stringify(info.message)}`;
+        }),
+      ),
       transports: [new winston.transports.Console()],
     }),
     ConfigModule.forRoot({

@@ -27,10 +27,16 @@ export class PrismaService
 
   onModuleInit() {
     this.$on('error', (e) => {
-      this.logger.error(e);
+      this.logger.error({
+        message: e.message,
+      });
     });
     this.$on('query', (e) => {
-      this.logger.info(e);
+      this.logger.info({
+        query: e.query,
+        params: e.params,
+        duration: e.duration,
+      });
     });
   }
 }
