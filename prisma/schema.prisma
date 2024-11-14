@@ -76,7 +76,7 @@ model User {
   userId    String @id @default(uuid()) @map("user_id")
   username   String   @db.VarChar(100) @unique
   password   String   @db.VarChar(100)
-  token      String?  @db.VarChar(100)
+  token      String?  @db.VarChar(300)
   role       UserRole
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
