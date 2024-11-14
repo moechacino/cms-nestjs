@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { WinstonModule } from 'nest-winston';
-import winston from 'winston';
+import * as winston from 'winston';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_PIPE } from '@nestjs/core';
 import { ErrorFilter } from './error.filter';
@@ -40,7 +40,7 @@ import { ErrorFilter } from './error.filter';
   exports: [PrismaService],
   imports: [
     WinstonModule.forRoot({
-      format: winston.format.json(),
+      format: winston.format.prettyPrint({ depth: 5 }),
       transports: [new winston.transports.Console()],
     }),
     ConfigModule.forRoot({
