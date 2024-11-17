@@ -17,7 +17,7 @@ describe('UserController (e2e)', () => {
   let app: INestApplication;
   let userTestService: UserTestService;
   let logger: Logger;
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule, TestModule],
     }).compile();

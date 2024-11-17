@@ -37,4 +37,8 @@ export class UserTestService {
   async deleteUsers() {
     await this.prismaService.user.deleteMany();
   }
+
+  async deleteUser(username: string) {
+    await this.prismaService.user.deleteMany({ where: { username } });
+  }
 }
