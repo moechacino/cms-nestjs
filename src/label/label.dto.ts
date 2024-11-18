@@ -12,16 +12,7 @@ export class LabelUpdateRequestDto {
   labelName: string;
 }
 
-export class LabelResponse {
-  @IsNotEmpty()
-  @IsNumber()
+export type LabelResponse = {
   labelId: number;
-
-  @IsNotEmpty()
-  @IsString()
   name: string;
-
-  constructor(strict: LabelResponse) {
-    Object.assign(this, strict);
-  }
-}
+};

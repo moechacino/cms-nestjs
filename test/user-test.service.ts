@@ -1,17 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../src/common/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
-import { AuthPayload } from '../src/common/types/web.type';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UserTestService {
-  constructor(
-    private readonly prismaService: PrismaService,
-    private readonly jwt: JwtService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   async createUser(username: string = 'cibay'): Promise<{
     userId: string;

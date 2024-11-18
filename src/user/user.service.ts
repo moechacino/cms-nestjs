@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { JwtService } from '@nestjs/jwt';
-import { UserLoginRequestDto, UserLoginResponseDto } from './user.dto';
+import { UserLoginRequestDto, UserLoginResponse } from './user.dto';
 import * as bcrypt from 'bcrypt';
 import { toUserLoginResponse } from './user.mapper';
 import { AuthPayload } from '../common/types/web.type';
@@ -25,7 +25,7 @@ export class UserService {
 
   async login(
     request: UserLoginRequestDto,
-  ): Promise<{ refreshToken: string; data: UserLoginResponseDto }> {
+  ): Promise<{ refreshToken: string; data: UserLoginResponse }> {
     const user = await this.prismaService.user.findUnique({
       where: { username: request.username },
     });

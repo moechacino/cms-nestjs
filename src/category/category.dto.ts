@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CategoryRequestDto {
   @IsNotEmpty()
@@ -6,16 +6,7 @@ export class CategoryRequestDto {
   name: string;
 }
 
-export class CategoryResponse {
-  @IsNotEmpty()
-  @IsNumber()
+export type CategoryResponse = {
   categoryId: number;
-
-  @IsNotEmpty()
-  @IsString()
   name: string;
-
-  constructor(strict: CategoryResponse) {
-    Object.assign(this, strict);
-  }
-}
+};

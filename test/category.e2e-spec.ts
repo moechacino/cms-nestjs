@@ -29,7 +29,8 @@ describe('ArticleController (e2e)', () => {
     categoryTestService = app.get(CategoryTestService);
     logger = app.get<Logger>(WINSTON_MODULE_PROVIDER);
     await app.init();
-    await userTestService.deleteUsers();
+
+    await userTestService.deleteUser(username);
     await categoryTestService.deleteCategories();
     const user = await userTestService.createUser(username);
     const response = await request(app.getHttpServer())
@@ -40,7 +41,7 @@ describe('ArticleController (e2e)', () => {
     token = 'Bearer ' + accToken;
   });
   afterAll(async () => {
-    await userTestService.deleteUsers();
+    await userTestService.deleteUser(username);
     await categoryTestService.deleteCategories();
   });
 

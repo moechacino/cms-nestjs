@@ -1,4 +1,3 @@
-import { Expose } from 'class-transformer';
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class UserLoginRequestDto {
@@ -11,13 +10,7 @@ export class UserLoginRequestDto {
   password: string;
 }
 
-export class UserLoginResponseDto {
-  @Expose()
+export type UserLoginResponse = {
   token: string;
-  @Expose()
   user: { username: string };
-
-  constructor(strict: UserLoginResponseDto) {
-    Object.assign(this, strict);
-  }
-}
+};

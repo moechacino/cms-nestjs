@@ -4,10 +4,7 @@ import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { UserTestService } from './user-test.service';
 import { TestModule } from './test.module';
-import {
-  UserLoginRequestDto,
-  UserLoginResponseDto,
-} from '../src/user/user.dto';
+import { UserLoginRequestDto, UserLoginResponse } from '../src/user/user.dto';
 import { Logger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { ErrResponse, WebResponse } from '../src/common/types/web.type';
@@ -17,6 +14,8 @@ describe('UserController (e2e)', () => {
   let app: INestApplication;
   let userTestService: UserTestService;
   let logger: Logger;
+  const username = 'cibay user';
+  let user: { userId: string; username: string; password: string };
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule, TestModule],
@@ -27,18 +26,16 @@ describe('UserController (e2e)', () => {
     logger = app.get<Logger>(WINSTON_MODULE_PROVIDER);
     app.use(cookieParser());
     await app.init();
+    await userTestService.deleteUser(username);
+    user = await userTestService.createUser(username);
+  });
+
+  afterAll(async () => {
+    await userTestService.deleteUser(username);
   });
 
   describe('/user/login (POST)', () => {
     let loginRequest: UserLoginRequestDto;
-    let user: { userId: string; username: string; password: string };
-    beforeEach(async () => {
-      user = await userTestService.createUser();
-    });
-    afterEach(async () => {
-      await userTestService.deleteUsers();
-    });
-
     it('should login success', async () => {
       loginRequest = {
         username: user.username,
@@ -50,7 +47,7 @@ describe('UserController (e2e)', () => {
         .send(loginRequest)
         .expect(200);
 
-      expect(response.body).toStrictEqual<WebResponse<UserLoginResponseDto>>({
+      expect(response.body).toStrictEqual<WebResponse<UserLoginResponse>>({
         data: {
           token: expect.any(String),
           user: { username: loginRequest.username },

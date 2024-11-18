@@ -5,13 +5,12 @@ import {
   HttpCode,
   Patch,
   Post,
-  Req,
   Res,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UserLoginRequestDto, UserLoginResponseDto } from './user.dto';
+import { UserLoginRequestDto, UserLoginResponse } from './user.dto';
 import { AuthPayload, WebResponse } from '../common/types/web.type';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { Roles } from '../common/decorator/roles/roles.decorator';
 import { Auth } from '../common/decorator/auth/auth.decorator';
 import { Cookies } from '../common/decorator/cookies/cookies.decorator';
@@ -25,7 +24,7 @@ export class UserController {
   async login(
     @Body() request: UserLoginRequestDto,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<WebResponse<UserLoginResponseDto>> {
+  ): Promise<WebResponse<UserLoginResponse>> {
     const { data, refreshToken } = await this.service.login(request);
     response.cookie('admin_rt', refreshToken, {
       httpOnly: true,
