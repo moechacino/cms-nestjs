@@ -35,6 +35,8 @@ model Category {
   categoryId Int @default(autoincrement()) @id @map("category_id")
   name String @db.VarChar(20)
   articles Article[]
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(0)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
 
   @@map("categories")
 }
