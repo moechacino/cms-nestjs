@@ -17,12 +17,12 @@ model Article {
   articleId    String @id @default(uuid()) @map("article_id")
   title String @db.VarChar(200)
   content String @db.Text
-  slug   String @unique @db.VarChar(255)
+  slug   String @unique @db.VarChar(500)
   author String? @db.VarChar(100)
-  thumbnailUrl String @db.VarChar(255) @map("thumbnail_url")
+  thumbnailUrl String @db.Text @map("thumbnail_url")
   thumbnailFilename String @db.VarChar(100) @map("thumbnail_filename")
   thumbnailAlt String @db.VarChar(100) @map("thumbnail_alt")
-  categoryId Int @map("category_id")
+  categoryId Int @db.UnsignedInt @map("category_id")
   category Category @relation(fields: [categoryId],references: [categoryId], onDelete: Restrict)
   labels LabelOnArticle[]
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(0)
@@ -32,7 +32,7 @@ model Article {
 }
 
 model Category {
-  categoryId Int @default(autoincrement()) @id @map("category_id")
+  categoryId Int @db.UnsignedInt @default(autoincrement()) @id @map("category_id")
   name String @db.VarChar(20)
   articles Article[]
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(0)
@@ -42,7 +42,7 @@ model Category {
 }
 
 model LabelOnArticle {
-  labelId   Int @map("label_id")
+  labelId   Int @db.UnsignedInt @map("label_id")
   label     Label @relation(fields: [labelId], references: [labelId])
   articleId String  @map("article_id")
   article   Article      @relation(fields: [articleId], references: [articleId])
@@ -52,7 +52,7 @@ model LabelOnArticle {
 }
 
 model Label {
-  labelId Int      @id @default(autoincrement()) @map("label_id")
+  labelId Int  @db.UnsignedInt    @id @default(autoincrement()) @map("label_id")
   name      String @db.VarChar(20)
   articles LabelOnArticle[]
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp(0)
@@ -62,7 +62,7 @@ model Label {
 }
 
 model File {
-  fileId        Int      @id @default(autoincrement()) @map("file_id")
+  fileId        Int   @db.UnsignedInt    @id @default(autoincrement()) @map("file_id")
   filename  String   @db.VarChar(100)
   mimetype  String   @db.VarChar(20)
   extension String   @db.VarChar(10)

@@ -1,17 +1,10 @@
-import { Prisma } from '@prisma/client';
-import { ArticleResponse } from './article.model';
+import {
+  ArticleResponse,
+  ArticleWithCategoriesAndLabels,
+} from './article.model';
 
 export function toArticleResponse(
-  article: Prisma.ArticleGetPayload<{
-    include: {
-      category: true;
-      labels: {
-        include: {
-          label: true;
-        };
-      };
-    };
-  }>,
+  article: ArticleWithCategoriesAndLabels,
 ): ArticleResponse {
   return {
     articleId: article.articleId,

@@ -1,4 +1,6 @@
-import { Type } from 'class-transformer';
+import { BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -22,8 +24,8 @@ export class ArticleCreateRequestDto {
   author?: string;
 
   @IsNotEmpty()
-  @Type(() => Number)
   @IsNumber()
+  @Type(() => Number)
   categoryId: number;
 
   @IsNotEmpty()
@@ -48,8 +50,8 @@ export class ArticleUpdateRequestDto {
   author?: string;
 
   @IsOptional()
-  @Type(() => Number)
   @IsNumber()
+  @Type(() => Number)
   categoryId: number;
 
   @IsOptional()
@@ -59,6 +61,66 @@ export class ArticleUpdateRequestDto {
   @Type(() => Number)
   labelsId: number[];
 }
+
+export class ArticleQueryRequestDto {
+  @IsOptional()
+  @Transform(({ value }: { value: string }) => {
+    if (value === '' || isNaN(Number(value))) return 16;
+
+    return parseInt(value);
+  })
+  take: number = 16;
+
+  @IsOptional()
+  @Transform(({ value }: { value: string }) => {
+    if (value === '' || isNaN(Number(value))) return 1;
+
+    return parseInt(value);
+  })
+  page: number = 1;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '' || isNaN(Number(value))) return undefined;
+    return parseInt(value);
+  })
+  categoryId: number = undefined;
+
+  @IsOptional()
+  @Transform(({ value }: { value: string | string[] }) => {
+    if (value === '') return [];
+    // class-trans send 1 data that is not array if the query request just 1 value in array
+    if (typeof value === 'string') {
+      if (!isNaN(Number(value))) return [Number(value)];
+      throw new BadRequestException('labelsId must be array of number');
+    }
+
+    return value.map((val) => {
+      if (isNaN(Number(val))) {
+        throw new BadRequestException(
+          `Invalid label ID: ${val}. Must be a number.`,
+        );
+      }
+      return parseInt(val);
+    });
+  })
+  labelsId: number[] = [];
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  sort: 'recent' | 'oldest' = undefined;
+}
+
+export type ArticleWithCategoriesAndLabels = Prisma.ArticleGetPayload<{
+  include: {
+    category: true;
+    labels: {
+      include: {
+        label: true;
+      };
+    };
+  };
+}>;
 
 export type ArticleResponse = {
   articleId: string;

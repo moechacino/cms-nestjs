@@ -3,13 +3,15 @@ import {
   Module,
   NestModule,
   RequestMethod,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ArticleController } from './article.controller';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_PIPE } from '@nestjs/core';
 import { RoleGuard } from '../common/guard/role/role.guard';
 import { LabelModule } from '../label/label.module';
 import { AuthMiddleware } from '../common/middleware/auth/auth.middleware';
 import { CategoryModule } from '../category/category.module';
+import { ArticleService } from './article.service';
 
 @Module({
   controllers: [ArticleController],
@@ -18,6 +20,7 @@ import { CategoryModule } from '../category/category.module';
       provide: APP_GUARD,
       useClass: RoleGuard,
     },
+    ArticleService,
   ],
   imports: [LabelModule, CategoryModule],
 })

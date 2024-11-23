@@ -8,9 +8,14 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { Roles } from '../common/decorator/roles/roles.decorator';
-import { WebResponse } from '../common/types/web.type';
+import { DataWithPagination, WebResponse } from '../common/types/web.type';
 import {
   LabelCreateRequestDto,
   LabelResponse,
@@ -19,22 +24,67 @@ import {
 import { LabelService } from '../label/label.service';
 import { CategoryRequestDto, CategoryResponse } from '../category/category.dto';
 import { CategoryService } from '../category/category.service';
+import {
+  ArticleCreateRequestDto,
+  ArticleQueryRequestDto,
+  ArticleResponse,
+} from './article.model';
+import { ArticleService } from './article.service';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  getMulterConfig,
+  storageDirectory,
+} from '../common/config/multer.config';
+import { ArticleThumbnailValidationPipe } from '../common/pipe/article-thumbnailvalidation/article-thumbnailvalidation.pipe';
 
 @Controller('articles')
 export class ArticleController {
   constructor(
     private readonly labelService: LabelService,
     private readonly categoryService: CategoryService,
+    private readonly articleService: ArticleService,
   ) {}
 
   @Get()
   @HttpCode(200)
-  async articleGetAll() {}
+  async articleGetAll(
+    @Query()
+    query: ArticleQueryRequestDto,
+  ): Promise<WebResponse<DataWithPagination<ArticleResponse[]>>> {
+    const { currentPage, data, totalData, totalPage } =
+      await this.articleService.getAll(query);
+    return {
+      success: true,
+      data,
+      pagination: {
+        currentPage,
+        totalData,
+        totalPage,
+      },
+    };
+  }
 
   @Post()
   @HttpCode(201)
   @Roles(['admin'])
-  async articleCreate() {}
+  @UseInterceptors(
+    FileInterceptor(
+      'thumbnail',
+      getMulterConfig(storageDirectory.thumbnail.mainPath),
+    ),
+  )
+  async articleCreate(
+    @UploadedFile(ArticleThumbnailValidationPipe)
+    thumbnailFile: Express.Multer.File,
+    @Body()
+    request: ArticleCreateRequestDto,
+  ): Promise<WebResponse<ArticleResponse>> {
+    const data = await this.articleService.create(request, thumbnailFile);
+    return {
+      success: true,
+      data,
+    };
+  }
 
   @Post('labels')
   @HttpCode(201)

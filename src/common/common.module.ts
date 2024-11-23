@@ -21,11 +21,13 @@ import { ErrorFilter } from './error.filter';
     },
     {
       provide: APP_PIPE,
-      useClass: ValidationPipe,
       useValue: new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
         stopAtFirstError: true,
         exceptionFactory: (errors) => {
           const result = errors.map((error) => ({
