@@ -29,21 +29,34 @@ export class ArticleCreateRequestDto {
   categoryId: number;
 
   @IsNotEmpty()
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsNumber({}, { each: true })
-  @Type(() => Number)
+  @Transform(({ value }: { value: string | string[] }) => {
+    if (value === '') return [];
+    // class-trans send 1 data that is not array if the query request just 1 value in array
+    if (typeof value === 'string') {
+      if (!isNaN(Number(value))) return [Number(value)];
+      throw new BadRequestException('labelsId must be array of number');
+    }
+
+    return value.map((val) => {
+      if (isNaN(Number(val))) {
+        throw new BadRequestException(
+          `Invalid label ID: ${val}. Must be a number.`,
+        );
+      }
+      return parseInt(val);
+    });
+  })
   labelsId: number[];
 }
 
 export class ArticleUpdateRequestDto {
   @IsOptional()
   @IsString()
-  title: string;
+  title?: string;
 
   @IsOptional()
   @IsString()
-  content: string;
+  content?: string;
 
   @IsOptional()
   @IsString()
@@ -52,14 +65,27 @@ export class ArticleUpdateRequestDto {
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  categoryId: number;
+  categoryId?: number;
 
   @IsOptional()
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsNumber({}, { each: true })
-  @Type(() => Number)
-  labelsId: number[];
+  @Transform(({ value }: { value: string | string[] }) => {
+    if (value === '') return [];
+    // class-trans send 1 data that is not array if the query request just 1 value in array
+    if (typeof value === 'string') {
+      if (!isNaN(Number(value))) return [Number(value)];
+      throw new BadRequestException('labelsId must be array of number');
+    }
+
+    return value.map((val) => {
+      if (isNaN(Number(val))) {
+        throw new BadRequestException(
+          `Invalid label ID: ${val}. Must be a number.`,
+        );
+      }
+      return parseInt(val);
+    });
+  })
+  labelsId?: number[];
 }
 
 export class ArticleQueryRequestDto {
@@ -113,10 +139,20 @@ export class ArticleQueryRequestDto {
 
 export type ArticleWithCategoriesAndLabels = Prisma.ArticleGetPayload<{
   include: {
-    category: true;
+    category: {
+      select: {
+        categoryId: true;
+        name: true;
+      };
+    };
     labels: {
       include: {
-        label: true;
+        label: {
+          select: {
+            labelId: true;
+            name: true;
+          };
+        };
       };
     };
   };

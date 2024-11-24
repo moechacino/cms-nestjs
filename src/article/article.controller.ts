@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -6,6 +7,7 @@ import {
   HttpCode,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -28,6 +30,7 @@ import {
   ArticleCreateRequestDto,
   ArticleQueryRequestDto,
   ArticleResponse,
+  ArticleUpdateRequestDto,
 } from './article.model';
 import { ArticleService } from './article.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -75,10 +78,11 @@ export class ArticleController {
   )
   async articleCreate(
     @UploadedFile(ArticleThumbnailValidationPipe)
-    thumbnailFile: Express.Multer.File,
+    thumbnailFile: Express.Multer.File | undefined,
     @Body()
     request: ArticleCreateRequestDto,
   ): Promise<WebResponse<ArticleResponse>> {
+    if (!thumbnailFile) throw new BadRequestException('No Thumbnail Provided');
     const data = await this.articleService.create(request, thumbnailFile);
     return {
       success: true,
@@ -207,11 +211,41 @@ export class ArticleController {
 
   @Get(':articleId')
   @HttpCode(200)
-  async articleGetById(@Param('articleId') articleId: string) {}
+  async articleGetById(
+    @Param('articleId', ParseUUIDPipe) articleId: string,
+  ): Promise<WebResponse<ArticleResponse>> {
+    const data = await this.articleService.getById(articleId);
+    return {
+      success: true,
+      data,
+    };
+  }
 
   @Patch(':articleId')
+  @Roles(['admin'])
   @HttpCode(200)
-  async articleUpdate(@Param('articleId') articleId: string) {}
+  @UseInterceptors(
+    FileInterceptor(
+      'newThumbnail',
+      getMulterConfig(storageDirectory.thumbnail.mainPath),
+    ),
+  )
+  async articleUpdate(
+    @Param('articleId') articleId: string,
+    @UploadedFile(ArticleThumbnailValidationPipe)
+    newThumbnailFile: Express.Multer.File | undefined,
+    @Body() request: ArticleUpdateRequestDto,
+  ): Promise<WebResponse<ArticleResponse>> {
+    const data = await this.articleService.update(
+      articleId,
+      request,
+      newThumbnailFile,
+    );
+    return {
+      success: true,
+      data,
+    };
+  }
 
   @Delete(':articleId')
   @HttpCode(200)

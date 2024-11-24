@@ -1,9 +1,16 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ArticleInterface } from './article.interface';
 import {
   ArticleCreateRequestDto,
   ArticleQueryRequestDto,
   ArticleResponse,
+  ArticleUpdateRequestDto,
   ArticleWithCategoriesAndLabels,
 } from './article.model';
 import { PrismaService } from '../common/prisma.service';
@@ -15,7 +22,7 @@ import * as fs from 'fs';
 import { ConfigService } from '@nestjs/config';
 import { storageDirectory } from '../common/config/multer.config';
 import { toArticleResponse } from './article.mapper';
-import { Prisma } from '@prisma/client';
+import { Article, Prisma } from '@prisma/client';
 import { DataWithPagination } from '../common/types/web.type';
 @Injectable()
 export class ArticleService implements ArticleInterface {
@@ -93,20 +100,27 @@ export class ArticleService implements ArticleInterface {
           }),
         ]);
 
-        const newesArticle: ArticleWithCategoriesAndLabels =
-          await prisma.article.findUnique({
-            where: { articleId: article.articleId },
-            include: {
-              category: true,
-              labels: {
-                include: {
-                  label: true,
+        return await prisma.article.findUnique({
+          where: { articleId: article.articleId },
+          include: {
+            category: {
+              select: {
+                categoryId: true,
+                name: true,
+              },
+            },
+            labels: {
+              include: {
+                label: {
+                  select: {
+                    labelId: true,
+                    name: true,
+                  },
                 },
               },
             },
-          });
-
-        return newesArticle;
+          },
+        });
       })
       // delete file if transaction failed
       .catch(async (error) => {
@@ -148,10 +162,20 @@ export class ArticleService implements ArticleInterface {
           take: query.take,
           where: whereObject,
           include: {
-            category: true,
+            category: {
+              select: {
+                categoryId: true,
+                name: true,
+              },
+            },
             labels: {
               include: {
-                label: true,
+                label: {
+                  select: {
+                    labelId: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -170,6 +194,228 @@ export class ArticleService implements ArticleInterface {
       totalData,
       totalPage,
     };
+  }
+
+  async getById(articleId: string): Promise<ArticleResponse> {
+    const article = await this.prismaService.article.findUniqueOrThrow({
+      where: { articleId },
+      include: {
+        category: {
+          select: {
+            categoryId: true,
+            name: true,
+          },
+        },
+        labels: {
+          include: {
+            label: {
+              select: {
+                labelId: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return toArticleResponse(article);
+  }
+
+  async update(
+    articleId: string,
+    request: ArticleUpdateRequestDto,
+    newThumbnailFile: Express.Multer.File | undefined,
+  ): Promise<ArticleResponse> {
+    const oldArticle = await this.prismaService.article.findUniqueOrThrow({
+      where: { articleId },
+      include: {
+        category: {
+          select: {
+            categoryId: true,
+            name: true,
+          },
+        },
+        labels: {
+          include: {
+            label: {
+              select: {
+                labelId: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const updateData: Prisma.ArticleUpdateInput =
+      await this.buildUpdateData(request);
+
+    const updatedArticle = await this.prismaService.$transaction(
+      async (prisma) => {
+        await this.handleThumbnailUpdate(
+          newThumbnailFile || undefined,
+          oldArticle,
+          request.title || undefined,
+          updateData,
+        );
+
+        if (request.labelsId && request.labelsId.length > 0) {
+          await this.updateArticleLabels(
+            prisma,
+            articleId,
+            request.labelsId,
+            oldArticle,
+          );
+        }
+
+        return prisma.article.update({
+          data: updateData,
+          where: { articleId },
+          include: {
+            category: {
+              select: { categoryId: true, name: true },
+            },
+            labels: {
+              include: { label: { select: { labelId: true, name: true } } },
+            },
+          },
+        });
+      },
+    );
+
+    return toArticleResponse(updatedArticle);
+  }
+
+  private async buildUpdateData(
+    request: ArticleUpdateRequestDto,
+  ): Promise<Prisma.ArticleUpdateInput> {
+    const updateData: Prisma.ArticleUpdateInput = {
+      ...(request.author && { author: request.author }),
+      ...(request.content && { content: request.content }),
+    };
+
+    if (request.title) {
+      const slug = await this.generateUniqueSlug(request.title);
+      updateData.slug = slug;
+      updateData.title = request.title;
+      updateData.thumbnailAlt = request.title;
+    }
+
+    if (request.categoryId) {
+      // check is category exist
+      await this.prismaService.category
+        .findUniqueOrThrow({
+          where: { categoryId: request.categoryId },
+        })
+        .catch(() => {
+          throw new BadRequestException(
+            `Category with ID ${request.categoryId} does not exist.`,
+          );
+        });
+
+      updateData.category = { connect: { categoryId: request.categoryId } };
+    }
+
+    return updateData;
+  }
+
+  private async handleThumbnailUpdate(
+    newThumbnailFile: Express.Multer.File | undefined,
+    oldArticle: Article,
+    newTitle: string | undefined,
+    updateData: Prisma.ArticleUpdateInput,
+  ) {
+    const slug = newTitle
+      ? await this.generateUniqueSlug(newTitle)
+      : oldArticle.slug;
+
+    let newFilename: string | undefined;
+    let newThumbnailUrl: string | undefined;
+
+    // handle extension change
+    if (newTitle && !newThumbnailFile) {
+      const oldExt = path.extname(oldArticle.thumbnailFilename || '');
+      newFilename = `thumbnail_${slug}${oldExt}`;
+      newThumbnailUrl = `${this.storageUrl}/${storageDirectory.thumbnail.subPath}/${newFilename}`;
+    }
+    // handle only title change so filename changed without extension
+    else if (!newTitle && newThumbnailFile) {
+      const oldFilenameWithoutExt = path.basename(
+        oldArticle.thumbnailFilename || '',
+        path.extname(oldArticle.thumbnailFilename || ''),
+      );
+      const newExt = path.extname(newThumbnailFile.originalname);
+      newFilename = `${oldFilenameWithoutExt}${newExt}`;
+      newThumbnailUrl = `${this.storageUrl}/${storageDirectory.thumbnail.subPath}/${newFilename}`;
+    }
+    // handle if both title and thumbnail change so filename and extension possible to change
+    else if (newTitle && newThumbnailFile) {
+      const newExt = path.extname(newThumbnailFile.originalname);
+      newFilename = `thumbnail_${slug}${newExt}`;
+      newThumbnailUrl = `${this.storageUrl}/${storageDirectory.thumbnail.subPath}/${newFilename}`;
+    }
+
+    if (newFilename && newThumbnailUrl) {
+      updateData.thumbnailFilename = newFilename;
+      updateData.thumbnailUrl = newThumbnailUrl;
+      if (newThumbnailFile) {
+        const finalPath = path.join(
+          storageDirectory.thumbnail.mainPath,
+          newFilename,
+        );
+        await fs.promises
+          .rename(newThumbnailFile.path, finalPath)
+          .catch(async () => {
+            if (fs.existsSync(newThumbnailFile.path)) {
+              await this.deleteOldThumbnailFile(newThumbnailFile.path);
+            }
+            this.logger.error(`Failed to rename or write file: ${finalPath}`);
+            throw new InternalServerErrorException(
+              'Failed to update thumbnail',
+            );
+          });
+      }
+    }
+  }
+
+  private async updateArticleLabels(
+    prisma: Prisma.TransactionClient,
+    articleId: string,
+    labelsId: number[],
+    oldArticle: ArticleWithCategoriesAndLabels,
+  ) {
+    const existingLabels = await prisma.label.findMany({
+      where: { labelId: { in: labelsId } },
+      select: { labelId: true },
+    });
+
+    const existingLabelIds = existingLabels.map((label) => label.labelId);
+    const missingLabels = labelsId.filter(
+      (id) => !existingLabelIds.includes(id),
+    );
+
+    if (missingLabels.length > 0) {
+      throw new NotFoundException(
+        `Labels not found: ${missingLabels.join(', ')}`,
+      );
+    }
+
+    const oldLabelIdList = oldArticle.labels.map((label) => label.labelId);
+    const newLabelIdList = labelsId.filter(
+      (labelId) => !oldLabelIdList.includes(labelId),
+    );
+
+    await prisma.labelOnArticle.deleteMany({
+      where: { articleId, labelId: { notIn: labelsId } },
+    });
+
+    if (newLabelIdList.length > 0) {
+      await prisma.labelOnArticle.createMany({
+        data: newLabelIdList.map((labelId) => ({ articleId, labelId })),
+      });
+    }
   }
 
   private async generateUniqueSlug(str: string): Promise<string> {

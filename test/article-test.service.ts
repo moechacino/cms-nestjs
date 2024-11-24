@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../src/common/prisma.service';
 import { Article } from '@prisma/client';
+import { ArticleWithCategoriesAndLabels } from '../src/article/article.model';
 
 @Injectable()
 export class ArticleTestService {
@@ -11,26 +12,28 @@ export class ArticleTestService {
     await this.prismaService.article.deleteMany();
   }
 
-  async createArticle(): Promise<Article> {
+  async createArticle(
+    title: string = 'article',
+  ): Promise<ArticleWithCategoriesAndLabels> {
     const labels = await this.prismaService.label.create({
       data: {
-        name: 'article labell',
+        name: `${title} labell`,
       },
     });
 
     const category = await this.prismaService.category.create({
       data: {
-        name: 'article category',
+        name: `${title} category`,
       },
     });
     const article = await this.prismaService.article.create({
       data: {
         content: 'conteng',
-        slug: 'slug',
+        slug: `${title} slug`,
         thumbnailAlt: 'tumbnalat',
         thumbnailFilename: 'filename',
         thumbnailUrl: 'url',
-        title: 'title',
+        title: `${title} title`,
         author: ' author',
         categoryId: category.categoryId,
       },
@@ -45,6 +48,14 @@ export class ArticleTestService {
 
     return this.prismaService.article.findUnique({
       where: { articleId: article.articleId },
+      include: {
+        category: true,
+        labels: {
+          include: {
+            label: true,
+          },
+        },
+      },
     });
   }
 }

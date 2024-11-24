@@ -21,7 +21,7 @@ export class ArticleThumbnailValidationPipe implements PipeTransform {
 
   async transform(file: Express.Multer.File, metadata: ArgumentMetadata) {
     if (!file) {
-      throw new BadRequestException('File or Thumbnail not provided');
+      return undefined;
     }
 
     if (!this.validTypes.includes(file.mimetype)) {

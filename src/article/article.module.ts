@@ -30,6 +30,14 @@ export class ArticleModule implements NestModule {
       .apply(AuthMiddleware)
       .exclude(
         {
+          path: 'articles',
+          method: RequestMethod.GET,
+        },
+        {
+          path: 'articles/:articleId',
+          method: RequestMethod.GET,
+        },
+        {
           path: 'articles/labels',
           method: RequestMethod.GET,
         },

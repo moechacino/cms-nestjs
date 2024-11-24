@@ -3,6 +3,7 @@ import {
   ArticleCreateRequestDto,
   ArticleQueryRequestDto,
   ArticleResponse,
+  ArticleUpdateRequestDto,
 } from './article.model';
 
 export interface ArticleInterface {
@@ -14,4 +15,12 @@ export interface ArticleInterface {
   getAll(
     query: ArticleQueryRequestDto,
   ): Promise<DataWithPagination<ArticleResponse[]>>;
+
+  getById(articleId: string): Promise<ArticleResponse>;
+
+  update(
+    articleId: string,
+    request: ArticleUpdateRequestDto,
+    newThumbnailFile: Express.Multer.File | undefined,
+  ): Promise<ArticleResponse>;
 }

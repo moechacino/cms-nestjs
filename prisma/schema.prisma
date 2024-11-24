@@ -33,7 +33,7 @@ model Article {
 
 model Category {
   categoryId Int @db.UnsignedInt @default(autoincrement()) @id @map("category_id")
-  name String @db.VarChar(20)
+  name String @db.VarChar(30)
   articles Article[]
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
@@ -53,7 +53,7 @@ model LabelOnArticle {
 
 model Label {
   labelId Int  @db.UnsignedInt    @id @default(autoincrement()) @map("label_id")
-  name      String @db.VarChar(20)
+  name      String @db.VarChar(30)
   articles LabelOnArticle[]
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp(0)
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamp(0)
