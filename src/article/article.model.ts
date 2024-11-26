@@ -29,12 +29,14 @@ export class ArticleCreateRequestDto {
   categoryId: number;
 
   @IsNotEmpty()
-  @Transform(({ value }: { value: string | string[] }) => {
-    if (value === '') return [];
-    // class-trans send 1 data that is not array if the query request just 1 value in array
-    if (typeof value === 'string') {
-      if (!isNaN(Number(value))) return [Number(value)];
-      throw new BadRequestException('labelsId must be array of number');
+  @Transform(({ value }) => {
+    if (!Array.isArray(value)) {
+      if (isNaN(Number(value)))
+        throw new BadRequestException(
+          'label id must be number or array of number',
+        );
+
+      return [parseInt(value, 10)];
     }
 
     return value.map((val) => {
@@ -68,12 +70,14 @@ export class ArticleUpdateRequestDto {
   categoryId?: number;
 
   @IsOptional()
-  @Transform(({ value }: { value: string | string[] }) => {
-    if (value === '') return [];
-    // class-trans send 1 data that is not array if the query request just 1 value in array
-    if (typeof value === 'string') {
-      if (!isNaN(Number(value))) return [Number(value)];
-      throw new BadRequestException('labelsId must be array of number');
+  @Transform(({ value }) => {
+    if (!Array.isArray(value)) {
+      if (isNaN(Number(value)))
+        throw new BadRequestException(
+          'label id must be number or array of number',
+        );
+
+      return [parseInt(value, 10)];
     }
 
     return value.map((val) => {
@@ -113,22 +117,26 @@ export class ArticleQueryRequestDto {
   categoryId: number = undefined;
 
   @IsOptional()
-  @Transform(({ value }: { value: string | string[] }) => {
+  @Transform(({ value }) => {
+    console.log(value);
+    console.log(typeof value);
     if (value === '') return [];
-    // class-trans send 1 data that is not array if the query request just 1 value in array
-    if (typeof value === 'string') {
-      if (!isNaN(Number(value))) return [Number(value)];
-      throw new BadRequestException('labelsId must be array of number');
-    }
-
-    return value.map((val) => {
-      if (isNaN(Number(val))) {
-        throw new BadRequestException(
-          `Invalid label ID: ${val}. Must be a number.`,
-        );
+    try {
+      const parsed = JSON.parse(value);
+      if (!Array.isArray(parsed)) {
+        throw new BadRequestException('labelsId must be an array of numbers.');
       }
-      return parseInt(val);
-    });
+      return parsed.map((val) => {
+        if (isNaN(Number(val))) {
+          throw new BadRequestException(
+            `Invalid label ID: ${val}. Must be a number.`,
+          );
+        }
+        return parseInt(val);
+      });
+    } catch (e) {
+      throw new BadRequestException('labelsId must be a valid JSON array.');
+    }
   })
   labelsId: number[] = [];
 

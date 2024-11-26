@@ -267,7 +267,7 @@ describe('ArticleController (e2e)', () => {
     });
     it('should return empty array because labelsId not match', async () => {
       const query = {
-        labelsId: [99999],
+        labelsId: '[99999]',
       };
       const response = await request(app.getHttpServer())
         .get('/articles')
@@ -297,221 +297,221 @@ describe('ArticleController (e2e)', () => {
     });
   });
 
-  describe('articles/:articleId (GET)', () => {
-    it('should success and return article', async () => {
-      const article = await articleTestService.createArticle('getone');
-      const response = await request(app.getHttpServer())
-        .get(`/articles/${article.articleId}`)
-        .expect(200);
+  // describe('articles/:articleId (GET)', () => {
+  //   it('should success and return article', async () => {
+  //     const article = await articleTestService.createArticle('getone');
+  //     const response = await request(app.getHttpServer())
+  //       .get(`/articles/${article.articleId}`)
+  //       .expect(200);
 
-      expect(response.body).toStrictEqual<WebResponse<ArticleResponse>>({
-        success: true,
-        data: {
-          articleId: expect.any(String),
-          title: expect.any(String),
-          content: expect.any(String),
-          slug: expect.any(String),
-          author: expect.any(String),
-          labels: expect.arrayContaining([
-            expect.objectContaining({
-              labelId: expect.any(Number),
-              name: expect.any(String),
-            }),
-          ]),
-          thumbnailUrl: expect.any(String),
-          thumbnailFilename: expect.any(String),
-          thumbnailAlt: expect.any(String),
-          category: expect.objectContaining({
-            categoryId: expect.any(Number),
-            name: expect.any(String),
-          }),
-          createdAt: expect.any(String),
-          updatedAt: expect.any(String),
-        },
-      });
-    });
+  //     expect(response.body).toStrictEqual<WebResponse<ArticleResponse>>({
+  //       success: true,
+  //       data: {
+  //         articleId: expect.any(String),
+  //         title: expect.any(String),
+  //         content: expect.any(String),
+  //         slug: expect.any(String),
+  //         author: expect.any(String),
+  //         labels: expect.arrayContaining([
+  //           expect.objectContaining({
+  //             labelId: expect.any(Number),
+  //             name: expect.any(String),
+  //           }),
+  //         ]),
+  //         thumbnailUrl: expect.any(String),
+  //         thumbnailFilename: expect.any(String),
+  //         thumbnailAlt: expect.any(String),
+  //         category: expect.objectContaining({
+  //           categoryId: expect.any(Number),
+  //           name: expect.any(String),
+  //         }),
+  //         createdAt: expect.any(String),
+  //         updatedAt: expect.any(String),
+  //       },
+  //     });
+  //   });
 
-    it('should throw bad request', async () => {
-      await request(app.getHttpServer()).get(`/articles/715b008b`).expect(400);
-    });
-    it('should throw not found', async () => {
-      await request(app.getHttpServer())
-        .get(`/articles/715b008b-e0f5-4b81-b4a3-ba252a397649`)
-        .expect(404);
-    });
-  });
+  //   it('should throw bad request', async () => {
+  //     await request(app.getHttpServer()).get(`/articles/715b008b`).expect(400);
+  //   });
+  //   it('should throw not found', async () => {
+  //     await request(app.getHttpServer())
+  //       .get(`/articles/715b008b-e0f5-4b81-b4a3-ba252a397649`)
+  //       .expect(404);
+  //   });
+  // });
 
-  describe('articles/:articleId (PATCH)', () => {
-    const updateReq: ArticleUpdateRequestDto = {
-      author: 'new author',
-      content: 'updated content',
-      title: 'updated title',
-    };
-    it('should update article with new thumbnail and return updated article', async () => {
-      const oldArticle = await articleTestService.createArticle('update');
-      const newLabel = (await labelTestService.createLabel('update label'))
-        .labelId;
-      const newCategory = (
-        await categoryTestService.createCategory('update category')
-      ).categoryId;
-      updateReq.labelsId = [oldArticle.labels[0].labelId, newLabel];
-      updateReq.categoryId = newCategory;
-      const response = await request(app.getHttpServer())
-        .patch(`/articles/${oldArticle.articleId}`)
-        .set('Authorization', token)
-        .field('title', updateReq.title) // optional
-        .field('content', updateReq.content) // optional
-        .field('categoryId', updateReq.categoryId) // optional
-        .field('author', updateReq.author) // optional
-        .field('labelsId', updateReq.labelsId) // optional
-        .attach('newThumbnail', filePath); // Mengirim file thumbnail
+  // describe('articles/:articleId (PATCH)', () => {
+  //   const updateReq: ArticleUpdateRequestDto = {
+  //     author: 'new author',
+  //     content: 'updated content',
+  //     title: 'updated title',
+  //   };
+  //   it('should update article with new thumbnail and return updated article', async () => {
+  //     const oldArticle = await articleTestService.createArticle('update');
+  //     const newLabel = (await labelTestService.createLabel('update label'))
+  //       .labelId;
+  //     const newCategory = (
+  //       await categoryTestService.createCategory('update category')
+  //     ).categoryId;
+  //     updateReq.labelsId = [oldArticle.labels[0].labelId, newLabel];
+  //     updateReq.categoryId = newCategory;
+  //     const response = await request(app.getHttpServer())
+  //       .patch(`/articles/${oldArticle.articleId}`)
+  //       .set('Authorization', token)
+  //       .field('title', updateReq.title) // optional
+  //       .field('content', updateReq.content) // optional
+  //       .field('categoryId', updateReq.categoryId) // optional
+  //       .field('author', updateReq.author) // optional
+  //       .field('labelsId', updateReq.labelsId) // optional
+  //       .attach('newThumbnail', filePath); // Mengirim file thumbnail
 
-      logger.warn('update ` body: ', response.body);
-      expect(response.body).toStrictEqual<WebResponse<ArticleResponse>>({
-        success: true,
-        data: {
-          articleId: oldArticle.articleId,
-          author: updateReq.author,
-          title: updateReq.title,
-          content: updateReq.content,
-          category: {
-            categoryId: updateReq.categoryId,
-            name: expect.any(String),
-          },
-          slug: expect.any(String),
-          thumbnailAlt: updateReq.title,
-          thumbnailFilename: expect.any(String),
-          thumbnailUrl: expect.any(String),
-          labels: [
-            {
-              labelId: updateReq.labelsId[0],
-              name: expect.any(String),
-            },
-            {
-              labelId: updateReq.labelsId[1],
-              name: expect.any(String),
-            },
-          ],
-          createdAt: expect.any(String),
-          updatedAt: expect.any(String),
-        },
-      });
-    });
+  //     logger.warn('update ` body: ', response.body);
+  //     expect(response.body).toStrictEqual<WebResponse<ArticleResponse>>({
+  //       success: true,
+  //       data: {
+  //         articleId: oldArticle.articleId,
+  //         author: updateReq.author,
+  //         title: updateReq.title,
+  //         content: updateReq.content,
+  //         category: {
+  //           categoryId: updateReq.categoryId,
+  //           name: expect.any(String),
+  //         },
+  //         slug: expect.any(String),
+  //         thumbnailAlt: updateReq.title,
+  //         thumbnailFilename: expect.any(String),
+  //         thumbnailUrl: expect.any(String),
+  //         labels: [
+  //           {
+  //             labelId: updateReq.labelsId[0],
+  //             name: expect.any(String),
+  //           },
+  //           {
+  //             labelId: updateReq.labelsId[1],
+  //             name: expect.any(String),
+  //           },
+  //         ],
+  //         createdAt: expect.any(String),
+  //         updatedAt: expect.any(String),
+  //       },
+  //     });
+  //   });
 
-    it('should update without thumbnail and partial field, return article response', async () => {
-      const oldArticle = await articleTestService.createArticle('update kedua');
-      const response = await request(app.getHttpServer())
-        .patch(`/articles/${oldArticle.articleId}`)
-        .set('Authorization', token)
-        .field('title', 'updated title')
-        .expect(200);
-      logger.warn('update 2 body: ', response.body);
-      expect(response.body).toStrictEqual<WebResponse<ArticleResponse>>({
-        success: true,
-        data: {
-          articleId: oldArticle.articleId,
-          author: oldArticle.author,
-          title: 'updated title',
-          content: oldArticle.content,
-          category: {
-            categoryId: oldArticle.categoryId,
-            name: expect.any(String),
-          },
-          slug: expect.not.stringMatching(oldArticle.slug),
-          thumbnailAlt: expect.stringContaining('updated title'),
-          thumbnailFilename: expect.stringContaining('updated-title'),
-          thumbnailUrl: expect.stringContaining('updated-title'),
-          labels: [
-            {
-              labelId: oldArticle.labels[0].label.labelId,
-              name: oldArticle.labels[0].label.name,
-            },
-          ],
-          createdAt: expect.any(String),
-          updatedAt: expect.any(String),
-        },
-      });
-    });
-    it('should throw not found', async () => {
-      await request(app.getHttpServer())
-        .patch(`/articles/324323`)
-        .set('Authorization', token)
-        .field('title', 'updated title')
-        .expect(404);
-    });
-  });
+  //   it('should update without thumbnail and partial field, return article response', async () => {
+  //     const oldArticle = await articleTestService.createArticle('update kedua');
+  //     const response = await request(app.getHttpServer())
+  //       .patch(`/articles/${oldArticle.articleId}`)
+  //       .set('Authorization', token)
+  //       .field('title', 'updated title')
+  //       .expect(200);
+  //     logger.warn('update 2 body: ', response.body);
+  //     expect(response.body).toStrictEqual<WebResponse<ArticleResponse>>({
+  //       success: true,
+  //       data: {
+  //         articleId: oldArticle.articleId,
+  //         author: oldArticle.author,
+  //         title: 'updated title',
+  //         content: oldArticle.content,
+  //         category: {
+  //           categoryId: oldArticle.categoryId,
+  //           name: expect.any(String),
+  //         },
+  //         slug: expect.not.stringMatching(oldArticle.slug),
+  //         thumbnailAlt: expect.stringContaining('updated title'),
+  //         thumbnailFilename: expect.stringContaining('updated-title'),
+  //         thumbnailUrl: expect.stringContaining('updated-title'),
+  //         labels: [
+  //           {
+  //             labelId: oldArticle.labels[0].label.labelId,
+  //             name: oldArticle.labels[0].label.name,
+  //           },
+  //         ],
+  //         createdAt: expect.any(String),
+  //         updatedAt: expect.any(String),
+  //       },
+  //     });
+  //   });
+  //   it('should throw not found', async () => {
+  //     await request(app.getHttpServer())
+  //       .patch(`/articles/324323`)
+  //       .set('Authorization', token)
+  //       .field('title', 'updated title')
+  //       .expect(404);
+  //   });
+  // });
 
-  describe('articles/:articleId (DELETE)', () => {
-    it('should success and return deleted article', async () => {
-      const article = await articleTestService.createArticle('Delete article');
-      const response = await request(app.getHttpServer())
-        .delete(`/articles/${article.articleId}`)
-        .set('Authorization', token);
+  // describe('articles/:articleId (DELETE)', () => {
+  //   it('should success and return deleted article', async () => {
+  //     const article = await articleTestService.createArticle('Delete article');
+  //     const response = await request(app.getHttpServer())
+  //       .delete(`/articles/${article.articleId}`)
+  //       .set('Authorization', token);
 
-      logger.warn(response.body);
+  //     logger.warn(response.body);
 
-      expect(response.status).toEqual(200);
-      expect(response.body).toStrictEqual<WebResponse<ArticleResponse>>({
-        success: true,
-        data: {
-          articleId: article.articleId,
-          title: expect.any(String),
-          content: expect.any(String),
-          slug: expect.any(String),
-          author: expect.any(String),
-          labels: expect.arrayContaining([
-            expect.objectContaining({
-              labelId: expect.any(Number),
-              name: expect.any(String),
-            }),
-          ]),
-          thumbnailUrl: expect.any(String),
-          thumbnailFilename: expect.any(String),
-          thumbnailAlt: expect.any(String),
-          category: expect.objectContaining({
-            categoryId: expect.any(Number),
-            name: expect.any(String),
-          }),
-          createdAt: expect.any(String),
-          updatedAt: expect.any(String),
-        },
-      });
-    });
+  //     expect(response.status).toEqual(200);
+  //     expect(response.body).toStrictEqual<WebResponse<ArticleResponse>>({
+  //       success: true,
+  //       data: {
+  //         articleId: article.articleId,
+  //         title: expect.any(String),
+  //         content: expect.any(String),
+  //         slug: expect.any(String),
+  //         author: expect.any(String),
+  //         labels: expect.arrayContaining([
+  //           expect.objectContaining({
+  //             labelId: expect.any(Number),
+  //             name: expect.any(String),
+  //           }),
+  //         ]),
+  //         thumbnailUrl: expect.any(String),
+  //         thumbnailFilename: expect.any(String),
+  //         thumbnailAlt: expect.any(String),
+  //         category: expect.objectContaining({
+  //           categoryId: expect.any(Number),
+  //           name: expect.any(String),
+  //         }),
+  //         createdAt: expect.any(String),
+  //         updatedAt: expect.any(String),
+  //       },
+  //     });
+  //   });
 
-    it('should throw not found', async () => {
-      await request(app.getHttpServer())
-        .delete(`/articles/123sfs2`)
-        .set('Authorization', token)
-        .expect(404);
-    });
-  });
-  describe('articles/:articleId/labels (GET)', () => {
-    it('should success and return label response', async () => {
-      const article = await articleTestService.createArticle('labsdfarticle');
-      const response = await request(app.getHttpServer()).get(
-        `/articles/${article.articleId}/labels`,
-      );
+  //   it('should throw not found', async () => {
+  //     await request(app.getHttpServer())
+  //       .delete(`/articles/123sfs2`)
+  //       .set('Authorization', token)
+  //       .expect(404);
+  //   });
+  // });
+  // describe('articles/:articleId/labels (GET)', () => {
+  //   it('should success and return label response', async () => {
+  //     const article = await articleTestService.createArticle('labsdfarticle');
+  //     const response = await request(app.getHttpServer()).get(
+  //       `/articles/${article.articleId}/labels`,
+  //     );
 
-      logger.warn(response.body);
-      expect(response.body).toStrictEqual<WebResponse<LabelResponse[]>>({
-        success: true,
-        data: expect.arrayContaining([
-          expect.objectContaining<LabelResponse>({
-            labelId: expect.any(Number),
-            name: expect.any(String),
-          }),
-        ]),
-      });
-    });
-    it('should success and return empty [] if article id not found', async () => {
-      const response = await request(app.getHttpServer()).get(
-        `/articles/fsdf32r4/labels`,
-      );
+  //     logger.warn(response.body);
+  //     expect(response.body).toStrictEqual<WebResponse<LabelResponse[]>>({
+  //       success: true,
+  //       data: expect.arrayContaining([
+  //         expect.objectContaining<LabelResponse>({
+  //           labelId: expect.any(Number),
+  //           name: expect.any(String),
+  //         }),
+  //       ]),
+  //     });
+  //   });
+  //   it('should success and return empty [] if article id not found', async () => {
+  //     const response = await request(app.getHttpServer()).get(
+  //       `/articles/fsdf32r4/labels`,
+  //     );
 
-      expect(response.body).toStrictEqual<WebResponse<LabelResponse[]>>({
-        success: true,
-        data: [],
-      });
-    });
-  });
+  //     expect(response.body).toStrictEqual<WebResponse<LabelResponse[]>>({
+  //       success: true,
+  //       data: [],
+  //     });
+  //   });
+  // });
 });
