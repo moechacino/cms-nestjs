@@ -14,7 +14,8 @@ import { Response } from 'express';
 import { Roles } from '../common/decorator/roles/roles.decorator';
 import { Auth } from '../common/decorator/auth/auth.decorator';
 import { Cookies } from '../common/decorator/cookies/cookies.decorator';
-
+import { ApiTags } from '@nestjs/swagger';
+@ApiTags('user')
 @Controller('user')
 export class UserController {
   constructor(private readonly service: UserService) {}

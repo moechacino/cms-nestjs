@@ -6,7 +6,13 @@ import { ArticleModule } from './article/article.module';
 import { CategoryModule } from './category/category.module';
 
 @Module({
-  imports: [CommonModule, UserModule, ArticleModule, LabelModule, CategoryModule],
+  imports: [
+    CommonModule,
+    UserModule,
+    ArticleModule,
+    LabelModule,
+    CategoryModule,
+  ],
   controllers: [],
   providers: [],
 })

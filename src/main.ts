@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { ForbiddenException } from '@nestjs/common';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import * as cookieParser from 'cookie-parser';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,6 +24,26 @@ async function bootstrap() {
       }
     },
     credentials: true,
+  });
+
+  // api docs
+  const config = new DocumentBuilder()
+    .setTitle('Simple CMS for Article')
+    .setDescription('Just simple content management system like wordpress.')
+    .setVersion('1.0')
+    .setContact(
+      'moechacino',
+      'https://www.github.com/moechacino',
+      'lanaksa28@gmail.com',
+    )
+    .build();
+  const documentFactory = () =>
+    SwaggerModule.createDocument(app, config, {
+      autoTagControllers: false,
+    });
+  SwaggerModule.setup('docs', app, documentFactory, {
+    jsonDocumentUrl: 'docs/json',
+    useGlobalPrefix: true,
   });
 
   await app.listen(configService.get('APP_PORT'));

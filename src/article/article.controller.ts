@@ -39,7 +39,14 @@ import {
   storageDirectory,
 } from '../common/config/multer.config';
 import { ArticleThumbnailValidationPipe } from '../common/pipe/article-thumbnailvalidation/article-thumbnailvalidation.pipe';
-
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+import { ApiDocsGetAllArticle } from '../common/decorator/docs/article.docs.decorator';
+@ApiTags('Articles')
 @Controller('articles')
 export class ArticleController {
   constructor(
@@ -49,6 +56,7 @@ export class ArticleController {
   ) {}
 
   @Get()
+  @ApiDocsGetAllArticle()
   @HttpCode(200)
   async articleGetAll(
     @Query()

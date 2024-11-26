@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
@@ -11,23 +12,28 @@ import {
 } from 'class-validator';
 
 export class ArticleCreateRequestDto {
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   title: string;
 
+  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   content: string;
 
+  @ApiProperty()
   @IsOptional()
   @IsString()
   author?: string;
 
+  @ApiProperty()
   @IsNotEmpty()
   @IsNumber()
   @Type(() => Number)
   categoryId: number;
 
+  @ApiProperty({ type: [Number] })
   @IsNotEmpty()
   @Transform(({ value }) => {
     if (!Array.isArray(value)) {
@@ -52,23 +58,28 @@ export class ArticleCreateRequestDto {
 }
 
 export class ArticleUpdateRequestDto {
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   title?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   content?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   author?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
   categoryId?: number;
 
+  @ApiProperty({ type: [Number], required: false })
   @IsOptional()
   @Transform(({ value }) => {
     if (!Array.isArray(value)) {
