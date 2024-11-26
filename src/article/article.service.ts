@@ -22,8 +22,10 @@ import * as fs from 'fs';
 import { ConfigService } from '@nestjs/config';
 import { storageDirectory } from '../common/config/multer.config';
 import { toArticleResponse } from './article.mapper';
-import { Article, Prisma } from '@prisma/client';
+import { Article, Label, Prisma } from '@prisma/client';
 import { DataWithPagination } from '../common/types/web.type';
+import { LabelResponse } from '../label/label.dto';
+import { toLabelsResponse } from '../label/label.mapper';
 @Injectable()
 export class ArticleService implements ArticleInterface {
   constructor(
@@ -286,6 +288,77 @@ export class ArticleService implements ArticleInterface {
     );
 
     return toArticleResponse(updatedArticle);
+  }
+
+  async delete(articleId: string): Promise<ArticleResponse> {
+    const deletedArticle = await this.prismaService.$transaction(
+      async (prisma) => {
+        const article = await prisma.article.findUniqueOrThrow({
+          where: {
+            articleId,
+          },
+          include: {
+            category: {
+              select: {
+                categoryId: true,
+                name: true,
+              },
+            },
+            labels: {
+              include: {
+                label: {
+                  select: {
+                    labelId: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        await prisma.labelOnArticle.deleteMany({
+          where: { articleId },
+        });
+
+        await Promise.all([
+          prisma.article.deleteMany({
+            where: { articleId },
+          }),
+          fs.promises
+            .unlink(
+              `${storageDirectory.thumbnail.mainPath}/${article.thumbnailFilename}`,
+            )
+            .catch(() => {
+              this.logger.error(
+                ` failed to delete ${article.thumbnailFilename}`,
+              );
+            }),
+        ]);
+
+        return article;
+      },
+    );
+
+    return toArticleResponse(deletedArticle);
+  }
+
+  async getLabels(articleId: string): Promise<LabelResponse[]> {
+    const labelsOnArticle = await this.prismaService.labelOnArticle.findMany({
+      where: {
+        articleId,
+      },
+      select: {
+        label: true,
+      },
+    });
+
+    if (labelsOnArticle.length === 0) return [];
+
+    const labels: Label[] = labelsOnArticle.map(
+      (labelOnArticle) => labelOnArticle.label,
+    );
+    return toLabelsResponse(labels);
   }
 
   private async buildUpdateData(

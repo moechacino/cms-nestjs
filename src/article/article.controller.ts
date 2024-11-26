@@ -249,13 +249,25 @@ export class ArticleController {
 
   @Delete(':articleId')
   @HttpCode(200)
-  async articleDelete(@Param('articleId') articleId: string) {}
+  async articleDelete(
+    @Param('articleId') articleId: string,
+  ): Promise<WebResponse<ArticleResponse>> {
+    const data = await this.articleService.delete(articleId);
+    return {
+      success: true,
+      data,
+    };
+  }
 
   @Get(':articleId/labels')
   @HttpCode(200)
-  async labelsRelateOnArticle(@Param('articleId') articleId: string) {}
-
-  @Get(':articleId/suggestions')
-  @HttpCode(200)
-  async articleSuggestion(@Param('articleId') articleId: string) {}
+  async labelsRelateOnArticle(
+    @Param('articleId') articleId: string,
+  ): Promise<WebResponse<LabelResponse[]>> {
+    const data = await this.articleService.getLabels(articleId);
+    return {
+      success: true,
+      data,
+    };
+  }
 }

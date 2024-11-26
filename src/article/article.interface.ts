@@ -1,4 +1,5 @@
 import { DataWithPagination } from '../common/types/web.type';
+import { LabelResponse } from '../label/label.dto';
 import {
   ArticleCreateRequestDto,
   ArticleQueryRequestDto,
@@ -23,4 +24,8 @@ export interface ArticleInterface {
     request: ArticleUpdateRequestDto,
     newThumbnailFile: Express.Multer.File | undefined,
   ): Promise<ArticleResponse>;
+
+  delete(articleId: string): Promise<ArticleResponse>;
+
+  getLabels(articleId: string): Promise<LabelResponse[]>;
 }

@@ -18,6 +18,7 @@ import {
 import { Category, Label } from '@prisma/client';
 import { DataWithPagination, WebResponse } from '../src/common/types/web.type';
 import generateSlug from '../src/common/utils/generateSlug';
+import { LabelResponse } from '../src/label/label.dto';
 describe('ArticleController (e2e)', () => {
   let app: INestApplication;
   let labelTestService: LabelTestService;
@@ -429,6 +430,87 @@ describe('ArticleController (e2e)', () => {
           createdAt: expect.any(String),
           updatedAt: expect.any(String),
         },
+      });
+    });
+    it('should throw not found', async () => {
+      await request(app.getHttpServer())
+        .patch(`/articles/324323`)
+        .set('Authorization', token)
+        .field('title', 'updated title')
+        .expect(404);
+    });
+  });
+
+  describe('articles/:articleId (DELETE)', () => {
+    it('should success and return deleted article', async () => {
+      const article = await articleTestService.createArticle('Delete article');
+      const response = await request(app.getHttpServer())
+        .delete(`/articles/${article.articleId}`)
+        .set('Authorization', token);
+
+      logger.warn(response.body);
+
+      expect(response.status).toEqual(200);
+      expect(response.body).toStrictEqual<WebResponse<ArticleResponse>>({
+        success: true,
+        data: {
+          articleId: article.articleId,
+          title: expect.any(String),
+          content: expect.any(String),
+          slug: expect.any(String),
+          author: expect.any(String),
+          labels: expect.arrayContaining([
+            expect.objectContaining({
+              labelId: expect.any(Number),
+              name: expect.any(String),
+            }),
+          ]),
+          thumbnailUrl: expect.any(String),
+          thumbnailFilename: expect.any(String),
+          thumbnailAlt: expect.any(String),
+          category: expect.objectContaining({
+            categoryId: expect.any(Number),
+            name: expect.any(String),
+          }),
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String),
+        },
+      });
+    });
+
+    it('should throw not found', async () => {
+      await request(app.getHttpServer())
+        .delete(`/articles/123sfs2`)
+        .set('Authorization', token)
+        .expect(404);
+    });
+  });
+  describe('articles/:articleId/labels (GET)', () => {
+    it('should success and return label response', async () => {
+      const article = await articleTestService.createArticle('labsdfarticle');
+      const response = await request(app.getHttpServer()).get(
+        `/articles/${article.articleId}/labels`,
+      );
+
+      logger.warn(response.body);
+      expect(response.body).toStrictEqual<WebResponse<LabelResponse[]>>({
+        success: true,
+        data: expect.arrayContaining([
+          expect.objectContaining<LabelResponse>({
+            labelId: expect.any(Number),
+            name: expect.any(String),
+          }),
+        ]),
+      });
+    });
+    it('should success and return empty [] if article id not found', async () => {
+      const response = await request(app.getHttpServer()).get(
+        `/articles/fsdf32r4/labels`,
+      );
+
+      expect(response.body).toStrictEqual<WebResponse<LabelResponse[]>>({
+        success: true,
+        data: [],
       });
     });
   });

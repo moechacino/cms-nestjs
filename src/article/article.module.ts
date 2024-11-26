@@ -53,6 +53,10 @@ export class ArticleModule implements NestModule {
           path: 'articles/categories/:categoryId',
           method: RequestMethod.GET,
         },
+        {
+          path: 'articles/:articleId/labels',
+          method: RequestMethod.GET,
+        },
       )
       .forRoutes(ArticleController);
   }
