@@ -1,5 +1,5 @@
 import { User } from '@prisma/client';
-import { UserLoginResponse } from './user.dto';
+import { UserLoginResponse } from './user.model';
 
 export function toUserLoginResponse(
   user: User,

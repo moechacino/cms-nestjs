@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 import { JwtService } from '@nestjs/jwt';
-import { UserLoginRequestDto, UserLoginResponse } from './user.dto';
+import { UserLoginRequestDto, UserLoginResponse } from './user.model';
 import * as bcrypt from 'bcrypt';
 import { toUserLoginResponse } from './user.mapper';
 import { AuthPayload } from '../common/types/web.type';

@@ -4,7 +4,7 @@ import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { UserTestService } from './user-test.service';
 import { TestModule } from './test.module';
-import { UserLoginRequestDto, UserLoginResponse } from '../src/user/user.dto';
+import { UserLoginRequestDto, UserLoginResponse } from '../src/user/user.model';
 import { Logger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { ErrResponse, WebResponse } from '../src/common/types/web.type';

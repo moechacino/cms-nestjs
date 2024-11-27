@@ -1,15 +1,8 @@
-import {
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-  RequestMethod,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ArticleController } from './article.controller';
-import { APP_GUARD, APP_PIPE } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import { RoleGuard } from '../common/guard/role/role.guard';
 import { LabelModule } from '../label/label.module';
-import { AuthMiddleware } from '../common/middleware/auth/auth.middleware';
 import { CategoryModule } from '../category/category.module';
 import { ArticleService } from './article.service';
 
@@ -24,40 +17,4 @@ import { ArticleService } from './article.service';
   ],
   imports: [LabelModule, CategoryModule],
 })
-export class ArticleModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(AuthMiddleware)
-      .exclude(
-        {
-          path: 'articles',
-          method: RequestMethod.GET,
-        },
-        {
-          path: 'articles/:articleId',
-          method: RequestMethod.GET,
-        },
-        {
-          path: 'articles/labels',
-          method: RequestMethod.GET,
-        },
-        {
-          path: 'articles/labels/:labelId',
-          method: RequestMethod.GET,
-        },
-        {
-          path: 'articles/categories',
-          method: RequestMethod.GET,
-        },
-        {
-          path: 'articles/categories/:categoryId',
-          method: RequestMethod.GET,
-        },
-        {
-          path: 'articles/:articleId/labels',
-          method: RequestMethod.GET,
-        },
-      )
-      .forRoutes(ArticleController);
-  }
-}
+export class ArticleModule {}

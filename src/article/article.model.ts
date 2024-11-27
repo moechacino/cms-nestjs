@@ -132,22 +132,25 @@ export class ArticleQueryRequestDto {
     console.log(value);
     console.log(typeof value);
     if (value === '') return [];
+    let parsed: [];
+
     try {
-      const parsed = JSON.parse(value);
-      if (!Array.isArray(parsed)) {
-        throw new BadRequestException('labelsId must be an array of numbers.');
-      }
-      return parsed.map((val) => {
-        if (isNaN(Number(val))) {
-          throw new BadRequestException(
-            `Invalid label ID: ${val}. Must be a number.`,
-          );
-        }
-        return parseInt(val);
-      });
+      parsed = JSON.parse(value);
     } catch (e) {
       throw new BadRequestException('labelsId must be a valid JSON array.');
     }
+
+    if (!Array.isArray(parsed)) {
+      throw new BadRequestException('labelsId must be an array of numbers.');
+    }
+    return parsed.map((val) => {
+      if (isNaN(Number(val))) {
+        throw new BadRequestException(
+          `Invalid label ID: ${val}. Must be a number.`,
+        );
+      }
+      return parseInt(val);
+    });
   })
   labelsId: number[] = [];
 

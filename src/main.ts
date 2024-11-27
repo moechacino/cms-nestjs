@@ -29,21 +29,37 @@ async function bootstrap() {
   // api docs
   const config = new DocumentBuilder()
     .setTitle('Simple CMS for Article')
-    .setDescription('Just simple content management system like wordpress.')
+    .setDescription(
+      "Just simple content management system like wordpress. !NOTE :For all endpoints that require authorization, ensure to include {credentials: 'include'} in the requests. If credentials is not included, you will get 401 error",
+    )
+    .setExternalDoc(
+      'for AXIOS users : You must set {  withCredentials: true } ',
+      'https://axios-http.com/docs/req_config',
+    )
     .setVersion('1.0')
     .setContact(
       'moechacino',
       'https://www.github.com/moechacino',
       'lanaksa28@gmail.com',
     )
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'token',
+    )
     .build();
   const documentFactory = () =>
     SwaggerModule.createDocument(app, config, {
       autoTagControllers: false,
     });
-  SwaggerModule.setup('docs', app, documentFactory, {
+  SwaggerModule.setup('/', app, documentFactory, {
     jsonDocumentUrl: 'docs/json',
-    useGlobalPrefix: true,
+    swaggerOptions: {
+      withCredentials: true,
+    },
   });
 
   await app.listen(configService.get('APP_PORT'));
