@@ -1,5 +1,5 @@
 import { Category } from '@prisma/client';
-import { CategoryResponse } from './category.dto';
+import { CategoryResponse } from './category.model';
 
 export function toCategoryResponse(category: Category): CategoryResponse {
   return {

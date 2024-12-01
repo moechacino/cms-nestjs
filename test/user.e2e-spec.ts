@@ -90,13 +90,17 @@ describe('UserController (e2e)', () => {
 
   describe('/user/logout (PATCH)', () => {
     let token: string;
+    let cookie;
     beforeEach(async () => {
       const user = await userTestService.createUser();
-      token = (
-        await request(app.getHttpServer())
-          .post('/user/login')
-          .send({ username: user.username, password: user.password })
-      ).body.data.token;
+      const response = await request(app.getHttpServer())
+        .post('/user/login')
+        .withCredentials(true)
+        .set('User-Agent', 'Chrome')
+        .send({ username: user.username, password: user.password });
+
+      cookie = response.headers['set-cookie'] as unknown as string[];
+      token = response.body.data.token;
     });
     afterEach(async () => {
       await userTestService.deleteUsers();
@@ -105,7 +109,10 @@ describe('UserController (e2e)', () => {
     it('should logout success', async () => {
       const response = await request(app.getHttpServer())
         .patch('/user/logout')
+        .withCredentials(true)
+        .set('User-Agent', 'Chrome')
         .set('Authorization', `Bearer ${token}`)
+        .set('Cookie', cookie)
         .expect(200);
 
       expect(response.body).toStrictEqual<WebResponse>({
@@ -122,6 +129,8 @@ describe('UserController (e2e)', () => {
     it('should throw unauthorized invalid token', async () => {
       const response = await request(app.getHttpServer())
         .patch('/user/logout')
+        .set('User-Agent', 'Chrome')
+        .withCredentials(true)
         .set('Authorization', 'Bearer wrong token')
         .expect(401);
       expect(response.body).toStrictEqual<ErrResponse>({
@@ -134,6 +143,8 @@ describe('UserController (e2e)', () => {
     it('should throw unauthorized without token', async () => {
       const response = await request(app.getHttpServer())
         .patch('/user/logout')
+        .set('User-Agent', 'Chrome')
+        .withCredentials(true)
         .expect(401);
 
       expect(response.body).toStrictEqual<ErrResponse>({

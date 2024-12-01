@@ -1,21 +1,17 @@
 import { applyDecorators } from '@nestjs/common';
 import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiQuery,
   ApiResponse,
-  getSchemaPath,
 } from '@nestjs/swagger';
-import {
-  DataWithPagination,
-  ErrResponse,
-  WebResponse,
-} from '../../types/web.type';
-import {
-  ArticleCreateRequestDto,
-  ArticleResponse,
-} from '../../../article/article.model';
+
+import { getAll, getOne, update } from './article.docs.repository';
 
 export function ApiDocsGetAllArticle() {
+  const { docs200, docs400 } = getAll;
   return applyDecorators(
     ApiOperation({ summary: 'Get all articles with pagination.' }),
     ApiQuery({
@@ -91,103 +87,282 @@ export function ApiDocsGetAllArticle() {
   );
 }
 
-const docs200: {
-  empty: WebResponse<DataWithPagination<ArticleResponse[]>>;
-  withLabels: WebResponse<DataWithPagination<ArticleResponse[]>>;
-  withoutLabels: WebResponse<DataWithPagination<ArticleResponse[]>>;
-} = {
-  empty: {
-    success: true,
-    data: [],
-    pagination: {
-      currentPage: 1,
-      totalData: 0,
-      totalPage: 1,
-    },
-  },
-  withLabels: {
-    success: true,
-    data: [
-      {
-        articleId: '7037a54d-b336-4a2c-a14d-275ce637fdcd',
-        author: 'John Doe',
-        content:
-          'Artificial Intelligence is revolutionizing the healthcare industry...',
-        slug: 'exploring-ai-in-healthcare',
-        title: 'Exploring AI in Healthcare',
-        thumbnailUrl:
-          'F:/1Project/cms-nestjs/storage/files/thumbnail/eg-thumbnail.jpg',
-        thumbnailFilename: 'ai-healthcare-thumbnail.jpg',
-        thumbnailAlt: 'AI in healthcare',
-        category: {
-          categoryId: 270,
-          name: 'technology',
-        },
-        labels: [
-          {
-            labelId: 341,
-            name: 'IoT',
+export function ApiDocsPostArticle() {
+  return applyDecorators(
+    ApiConsumes('multipart/form-data'),
+    ApiBearerAuth('access-token'),
+    ApiBody({
+      description:
+        'Payload for creating an article, including the thumbnail file.',
+      schema: {
+        type: 'object',
+        properties: {
+          thumbnail: {
+            type: 'string',
+            format: 'binary',
+            description: 'Thumbnail image for the article',
           },
-          {
-            labelId: 342,
-            name: 'Artificial Intelligent',
+          title: { type: 'string', example: 'How to Use Swagger with NestJS' },
+          content: {
+            type: 'string',
+            example:
+              'This is a detailed article about integrating Swagger with NestJS.',
           },
-        ],
-        createdAt: new Date('2024-11-27T06:45:18.000Z'),
-        updatedAt: new Date('2024-11-27T06:45:18.000Z'),
-      },
-    ],
-    pagination: {
-      currentPage: 1,
-      totalData: 1,
-      totalPage: 1,
-    },
-  },
-  withoutLabels: {
-    success: true,
-    data: [
-      {
-        articleId: '262d49ab-2bbb-47c1-9888-306446cd59ce',
-        author: 'Alice Brown',
-        content:
-          'Sustainable energy is crucial for the future of our planet...',
-        slug: 'sustainable-energy-solutions',
-        title: 'Sustainable Energy Solutions',
-        thumbnailUrl:
-          'F:/1Project/cms-nestjs/storage/files/thumbnail/eg-thumbnail.jpg',
-        thumbnailFilename: 'sustainable-energy-thumbnail.jpg',
-        thumbnailAlt: 'Sustainable energy',
-        category: {
-          categoryId: 271,
-          name: 'business',
+          categoryId: { type: 'number', example: 1 },
+          labelsId: {
+            type: 'string',
+            example: '"[1,2,3]"',
+            description: 'JSON array of number',
+          },
+          author: {
+            type: 'string',
+            example: 'author',
+          },
         },
-        labels: [],
-        createdAt: new Date('2024-11-27T06:45:18.000Z'),
-        updatedAt: new Date('2024-11-27T06:45:18.000Z'),
+        required: ['thumbnail', 'title', 'content', 'categoryId'],
       },
-    ],
-    pagination: {
-      currentPage: 1,
-      totalData: 1,
-      totalPage: 1,
-    },
-  },
-};
+    }),
+    ApiResponse({
+      status: 400,
+      examples: {
+        e1: {
+          summary: 'invalid file type',
+          value: {
+            success: false,
+            errors: {
+              message: 'Invalid file type. Only images jpeg, jpg, and png',
+            },
+          },
+        },
+        e2: {
+          summary: 'labels id',
+          value: {
+            success: false,
+            errors: {
+              message: 'label id must be number or array of number',
+            },
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 200,
+      examples: {
+        ex1: {
+          summary: 'without labels',
+          value: {
+            success: true,
+            data: {
+              articleId: '69b11eca-0781-40ae-9b58-f8ba8826383b',
+              author: 'anonymous',
+              content: 'string',
+              slug: 'string',
+              title: 'string',
+              thumbnailUrl:
+                'F:/1Project/cms-nestjs/storage/files/thumbnail/thumbnail_string.jpeg',
+              thumbnailFilename: 'thumbnail_string.jpeg',
+              thumbnailAlt: 'string',
+              category: {
+                categoryId: 2,
+                name: 'business',
+              },
+              labels: [],
+              createdAt: '2024-11-27T13:57:32.000Z',
+              updatedAt: '2024-11-27T13:57:32.000Z',
+            },
+          },
+        },
+        ex2: {
+          summary: 'with labels',
+          value: {
+            success: true,
+            data: {
+              articleId: '9d81a086-6819-4366-b093-cfb427d82af7',
+              author: 'anonymous',
+              content: 'string',
+              slug: 'string-1',
+              title: 'string',
+              thumbnailUrl:
+                'F:/1Project/cms-nestjs/storage/files/thumbnail/thumbnail_string-1.jpeg',
+              thumbnailFilename: 'thumbnail_string-1.jpeg',
+              thumbnailAlt: 'string',
+              category: {
+                categoryId: 2,
+                name: 'business',
+              },
+              labels: [
+                {
+                  labelId: 1,
+                  name: 'IoT',
+                },
+              ],
+              createdAt: '2024-11-27T14:01:38.000Z',
+              updatedAt: '2024-11-27T14:01:38.000Z',
+            },
+          },
+        },
+      },
+    }),
+  );
+}
 
-const docs400: {
-  labelsIdArr: ErrResponse;
-  labelsIdNumArr;
-} = {
-  labelsIdArr: {
-    success: false,
-    errors: {
-      message: 'labelsId must be a valid JSON array.',
-    },
-  },
-  labelsIdNumArr: {
-    success: false,
-    errors: {
-      message: 'Invalid label ID: m. Must be a number.',
-    },
-  },
-};
+export function ApiDocsGetOneArticle() {
+  return applyDecorators(
+    ApiResponse({
+      status: 200,
+      example: getOne.docs200,
+    }),
+    ApiResponse({
+      status: 404,
+      example: {
+        success: false,
+        errors: {
+          message: 'Record not found',
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      example: {
+        success: false,
+        errors: {
+          message: 'Validation failed (uuid is expected)',
+        },
+      },
+    }),
+  );
+}
+
+export function ApiDocsGetLabelsByArticle() {
+  return applyDecorators(
+    ApiResponse({
+      status: 200,
+      examples: {
+        ex1: {
+          summary: 'ok',
+          value: {
+            success: true,
+            data: [
+              {
+                labelId: 1,
+                name: 'IoT',
+              },
+              {
+                labelId: 3,
+                name: 'Artificial Intelligent',
+              },
+            ],
+          },
+        },
+        ex2: {
+          summary: 'empty',
+          value: {
+            success: true,
+            data: [],
+          },
+        },
+      },
+    }),
+    ApiResponse({
+      status: 400,
+      example: {
+        success: false,
+        errors: {
+          message: 'Validation failed (uuid is expected)',
+        },
+      },
+    }),
+  );
+}
+
+export function ApiDocsDeleteArticle() {
+  return applyDecorators(
+    ApiBearerAuth('access-token'),
+    ApiResponse({
+      status: 200,
+      example: {
+        success: true,
+        data: {
+          articleId: '262d49ab-2bbb-47c1-9888-306446cd59ce',
+          author: 'Alice Brown',
+          content:
+            'Sustainable energy is crucial for the future of our planet...',
+          slug: 'sustainable-energy-solutions',
+          title: 'Sustainable Energy Solutions',
+          thumbnailUrl:
+            'F:/1Project/cms-nestjs/storage/files/thumbnail/eg-thumbnail.jpg',
+          thumbnailFilename: 'sustainable-energy-thumbnail.jpg',
+          thumbnailAlt: 'Sustainable energy',
+          category: {
+            categoryId: 1,
+            name: 'business',
+          },
+          labels: [],
+          createdAt: '2024-11-30T13:23:24.000Z',
+          updatedAt: '2024-11-30T13:23:24.000Z',
+        },
+      },
+    }),
+    ApiResponse({
+      status: 404,
+      example: {
+        success: false,
+        errors: {
+          message: 'Record not found',
+        },
+      },
+    }),
+  );
+}
+
+export function ApiDocsUpdateArticle() {
+  return applyDecorators(
+    ApiOperation({ summary: 'Update partial information' }),
+    ApiBearerAuth('access-token'),
+    ApiConsumes('multipart/form-data'),
+    ApiBody({
+      required: false,
+      description:
+        'Payload for creating an article, including the thumbnail file.',
+      schema: {
+        type: 'object',
+        properties: {
+          newThumbnail: {
+            type: 'string',
+            format: 'binary',
+            description: 'Thumbnail image for the article',
+          },
+          title: { type: 'string', example: 'How to Use Swagger with NestJS' },
+          content: {
+            type: 'string',
+            example:
+              'This is a detailed article about integrating Swagger with NestJS.',
+          },
+          categoryId: { type: 'number', example: 1 },
+          labelsId: {
+            type: 'string',
+            example: '"[1,2,3]"',
+            description: 'JSON array of number',
+          },
+          author: {
+            type: 'string',
+            example: 'author',
+          },
+        },
+        required: [],
+      },
+    }),
+    ApiResponse({
+      status: 200,
+      example: update.docs200,
+    }),
+    ApiResponse({
+      status: 400,
+      example: update.docs400.labelsId,
+    }),
+    ApiResponse({
+      status: 404,
+      example: update.docs404,
+    }),
+  );
+}

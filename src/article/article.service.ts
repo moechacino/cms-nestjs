@@ -24,7 +24,7 @@ import { storageDirectory } from '../common/config/multer.config';
 import { toArticleResponse } from './article.mapper';
 import { Article, Label, Prisma } from '@prisma/client';
 import { DataWithPagination } from '../common/types/web.type';
-import { LabelResponse } from '../label/label.dto';
+import { LabelResponse } from '../label/label.model';
 import { toLabelsResponse } from '../label/label.mapper';
 @Injectable()
 export class ArticleService implements ArticleInterface {
@@ -40,7 +40,8 @@ export class ArticleService implements ArticleInterface {
     request: ArticleCreateRequestDto,
     thumbnailFile: Express.Multer.File,
   ): Promise<ArticleResponse> {
-    const { categoryId, content, labelsId, title } = request;
+    const { categoryId, content, title } = request;
+    const labelsId = request.labelsId || [];
     const author = request.author || 'anonymous';
     const slug = await this.generateUniqueSlug(title);
     const thumbnailFilename = `thumbnail_${slug}${path.extname(thumbnailFile.originalname)}`;
@@ -50,29 +51,39 @@ export class ArticleService implements ArticleInterface {
       storageDirectory.thumbnail.mainPath,
       thumbnailFilename,
     );
+    this.logger.warn(request.labelsId);
+    this.logger.warn(request.labelsId.length);
+    if (labelsId.length > 0) {
+      const [existingLabels, countCategories] = await Promise.all([
+        this.prismaService.label.findMany({
+          where: { labelId: { in: labelsId } },
+          select: { labelId: true },
+        }),
+        this.prismaService.category.count({
+          where: { categoryId },
+        }),
+      ]);
 
-    const [existingLabels, countCategories] = await Promise.all([
-      this.prismaService.label.findMany({
-        where: { labelId: { in: labelsId } },
-        select: { labelId: true },
-      }),
-      this.prismaService.category.count({
-        where: { categoryId },
-      }),
-    ]);
+      const existingLabelIds = new Set(
+        existingLabels.map((label) => label.labelId),
+      );
 
-    const existingLabelIds = new Set(
-      existingLabels.map((label) => label.labelId),
-    );
-
-    for (const labelId of labelsId) {
-      if (!existingLabelIds.has(labelId)) {
-        throw new NotFoundException(`label ${labelId} not found`);
+      for (const labelId of labelsId) {
+        if (!existingLabelIds.has(labelId)) {
+          throw new NotFoundException(`label ${labelId} not found`);
+        }
       }
-    }
 
-    if (countCategories === 0) {
-      throw new NotFoundException('category not found');
+      if (countCategories === 0) {
+        throw new NotFoundException('category not found');
+      }
+    } else {
+      if (
+        (await this.prismaService.category.count({
+          where: { categoryId },
+        })) === 0
+      )
+        throw new NotFoundException('category not found');
     }
 
     const transaction: ArticleWithCategoriesAndLabels = await this.prismaService
@@ -91,16 +102,20 @@ export class ArticleService implements ArticleInterface {
           select: { articleId: true },
         });
         // create many to many between article and labels
-        await Promise.all([
-          fs.promises.rename(tempPath, finalPath),
+        if (labelsId.length > 0) {
+          await Promise.all([
+            fs.promises.rename(tempPath, finalPath),
 
-          prisma.labelOnArticle.createMany({
-            data: labelsId.map((labelId) => ({
-              articleId: article.articleId,
-              labelId,
-            })),
-          }),
-        ]);
+            prisma.labelOnArticle.createMany({
+              data: labelsId.map((labelId) => ({
+                articleId: article.articleId,
+                labelId,
+              })),
+            }),
+          ]);
+        } else {
+          await fs.promises.rename(tempPath, finalPath);
+        }
 
         return await prisma.article.findUnique({
           where: { articleId: article.articleId },
@@ -404,53 +419,57 @@ export class ArticleService implements ArticleInterface {
       ? await this.generateUniqueSlug(newTitle)
       : oldArticle.slug;
 
+    const oldFilename = oldArticle.thumbnailFilename || '';
+    const oldPath = path.join(storageDirectory.thumbnail.mainPath, oldFilename);
     let newFilename: string | undefined;
     let newThumbnailUrl: string | undefined;
 
-    // handle extension change
-    if (newTitle && !newThumbnailFile) {
-      const oldExt = path.extname(oldArticle.thumbnailFilename || '');
-      newFilename = `thumbnail_${slug}${oldExt}`;
-      newThumbnailUrl = `${this.storageUrl}/${storageDirectory.thumbnail.subPath}/${newFilename}`;
-    }
-    // handle only title change so filename changed without extension
-    else if (!newTitle && newThumbnailFile) {
-      const oldFilenameWithoutExt = path.basename(
-        oldArticle.thumbnailFilename || '',
-        path.extname(oldArticle.thumbnailFilename || ''),
-      );
-      const newExt = path.extname(newThumbnailFile.originalname);
-      newFilename = `${oldFilenameWithoutExt}${newExt}`;
-      newThumbnailUrl = `${this.storageUrl}/${storageDirectory.thumbnail.subPath}/${newFilename}`;
-    }
-    // handle if both title and thumbnail change so filename and extension possible to change
-    else if (newTitle && newThumbnailFile) {
-      const newExt = path.extname(newThumbnailFile.originalname);
+    if (newThumbnailFile || newTitle) {
+      // Tentukan nama file baru
+      const newExt = newThumbnailFile
+        ? path.extname(newThumbnailFile.originalname)
+        : path.extname(oldFilename);
       newFilename = `thumbnail_${slug}${newExt}`;
       newThumbnailUrl = `${this.storageUrl}/${storageDirectory.thumbnail.subPath}/${newFilename}`;
-    }
-
-    if (newFilename && newThumbnailUrl) {
       updateData.thumbnailFilename = newFilename;
       updateData.thumbnailUrl = newThumbnailUrl;
-      if (newThumbnailFile) {
-        const finalPath = path.join(
-          storageDirectory.thumbnail.mainPath,
-          newFilename,
-        );
-        await fs.promises
-          .rename(newThumbnailFile.path, finalPath)
-          .catch(async () => {
-            if (fs.existsSync(newThumbnailFile.path)) {
-              await this.deleteOldThumbnailFile(newThumbnailFile.path);
-            }
-            this.logger.error(`Failed to rename or write file: ${finalPath}`);
-            throw new InternalServerErrorException(
-              'Failed to update thumbnail',
-            );
-          });
+
+      try {
+        // Hapus file lama jika ada thumbnail baru
+        if (newThumbnailFile) {
+          if (oldFilename) await this.safeDeleteFile(oldPath);
+          await this.safeMoveFile(
+            newThumbnailFile.path,
+            path.join(storageDirectory.thumbnail.mainPath, newFilename),
+          );
+        } else if (newTitle) {
+          // Hanya ganti nama file jika judul berubah
+          const newPath = path.join(
+            storageDirectory.thumbnail.mainPath,
+            newFilename,
+          );
+          await fs.promises.rename(oldPath, newPath);
+        }
+      } catch (error) {
+        this.logger.error(`Thumbnail update failed: ${error.message}`);
+        throw new InternalServerErrorException('Failed to update thumbnail');
       }
     }
+  }
+
+  private async safeDeleteFile(filePath: string): Promise<void> {
+    await fs.promises.unlink(filePath).catch((error) => {
+      this.logger.warn(`Failed to delete file: ${filePath}`, error);
+    });
+    this.logger.info(`Successfully deleted file: ${filePath}`);
+  }
+
+  private async safeMoveFile(from: string, to: string): Promise<void> {
+    await fs.promises.rename(from, to).catch((error) => {
+      this.logger.error(`Failed to move file`, error);
+      throw error;
+    });
+    this.logger.info(`Successfully moved file from ${from} to ${to}`);
   }
 
   private async updateArticleLabels(

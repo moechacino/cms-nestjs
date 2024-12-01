@@ -13,8 +13,6 @@ import {
   Query,
   UploadedFile,
   UseInterceptors,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { Roles } from '../common/decorator/roles/roles.decorator';
 import { DataWithPagination, WebResponse } from '../common/types/web.type';
@@ -22,9 +20,12 @@ import {
   LabelCreateRequestDto,
   LabelResponse,
   LabelUpdateRequestDto,
-} from '../label/label.dto';
+} from '../label/label.model';
 import { LabelService } from '../label/label.service';
-import { CategoryRequestDto, CategoryResponse } from '../category/category.dto';
+import {
+  CategoryRequestDto,
+  CategoryResponse,
+} from '../category/category.model';
 import { CategoryService } from '../category/category.service';
 import {
   ArticleCreateRequestDto,
@@ -39,14 +40,30 @@ import {
   storageDirectory,
 } from '../common/config/multer.config';
 import { ArticleThumbnailValidationPipe } from '../common/pipe/article-thumbnailvalidation/article-thumbnailvalidation.pipe';
+import { ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
 import {
-  ApiOkResponse,
-  ApiOperation,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
-import { ApiDocsGetAllArticle } from '../common/decorator/docs/article.docs.decorator';
-@ApiTags('Articles')
+  ApiDocsDeleteArticle,
+  ApiDocsGetAllArticle,
+  ApiDocsGetLabelsByArticle,
+  ApiDocsGetOneArticle,
+  ApiDocsPostArticle,
+  ApiDocsUpdateArticle,
+} from '../common/decorator/docs/article.docs.decorator';
+import {
+  ApiDocsCreateCategories,
+  ApiDocsDeleteCategories,
+  ApiDocsGetAllCategories,
+  ApiDocsGetOneCategories,
+  ApiDocsUpdateCategories,
+} from '../common/decorator/docs/categories.docs.decorator';
+import {
+  ApiDocsCreateLabels,
+  ApiDocsDeleteLabels,
+  ApiDocsGetAllLabels,
+  ApiDocsGetOneLabels,
+  ApiDocsUpdateLabels,
+} from '../common/decorator/docs/label.docs.decorator';
+
 @Controller('articles')
 export class ArticleController {
   constructor(
@@ -55,26 +72,8 @@ export class ArticleController {
     private readonly articleService: ArticleService,
   ) {}
 
-  @Get()
-  @ApiDocsGetAllArticle()
-  @HttpCode(200)
-  async articleGetAll(
-    @Query()
-    query: ArticleQueryRequestDto,
-  ): Promise<WebResponse<DataWithPagination<ArticleResponse[]>>> {
-    const { currentPage, data, totalData, totalPage } =
-      await this.articleService.getAll(query);
-    return {
-      success: true,
-      data,
-      pagination: {
-        currentPage,
-        totalData,
-        totalPage,
-      },
-    };
-  }
-
+  @ApiTags('Articles')
+  @ApiDocsPostArticle()
   @Post()
   @HttpCode(201)
   @Roles(['admin'])
@@ -98,6 +97,29 @@ export class ArticleController {
     };
   }
 
+  @ApiTags('Articles')
+  @Get()
+  @ApiDocsGetAllArticle()
+  @HttpCode(200)
+  async articleGetAll(
+    @Query()
+    query: ArticleQueryRequestDto,
+  ): Promise<WebResponse<DataWithPagination<ArticleResponse[]>>> {
+    const { currentPage, data, totalData, totalPage } =
+      await this.articleService.getAll(query);
+    return {
+      success: true,
+      data,
+      pagination: {
+        currentPage,
+        totalData,
+        totalPage,
+      },
+    };
+  }
+
+  @ApiTags('Labels')
+  @ApiDocsCreateLabels()
   @Post('labels')
   @HttpCode(201)
   @Roles(['admin'])
@@ -111,6 +133,8 @@ export class ArticleController {
     };
   }
 
+  @ApiTags('Labels')
+  @ApiDocsGetAllLabels()
   @Get('labels')
   @HttpCode(200)
   async labelGetAll(): Promise<WebResponse<LabelResponse[]>> {
@@ -121,6 +145,8 @@ export class ArticleController {
     };
   }
 
+  @ApiTags('Labels')
+  @ApiDocsUpdateLabels()
   @Patch('labels/:labelId')
   @Roles(['admin'])
   @HttpCode(200)
@@ -135,6 +161,8 @@ export class ArticleController {
     };
   }
 
+  @ApiTags('Labels')
+  @ApiDocsGetOneLabels()
   @Get('labels/:labelId')
   @HttpCode(200)
   async labelGetById(
@@ -147,6 +175,8 @@ export class ArticleController {
     };
   }
 
+  @ApiTags('Labels')
+  @ApiDocsDeleteLabels()
   @Delete('labels/:labelId')
   @Roles(['admin'])
   @HttpCode(200)
@@ -159,6 +189,9 @@ export class ArticleController {
       data,
     };
   }
+
+  @ApiTags('Categories')
+  @ApiDocsCreateCategories()
   @Post('categories')
   @HttpCode(201)
   @Roles(['admin'])
@@ -172,6 +205,8 @@ export class ArticleController {
     };
   }
 
+  @ApiTags('Categories')
+  @ApiDocsGetAllCategories()
   @Get('categories')
   @HttpCode(200)
   async categoryGetAll(): Promise<WebResponse<CategoryResponse[]>> {
@@ -181,6 +216,9 @@ export class ArticleController {
       data,
     };
   }
+
+  @ApiTags('Categories')
+  @ApiDocsGetOneCategories()
   @Get('categories/:categoryId')
   @HttpCode(200)
   async categoryGetByid(
@@ -192,6 +230,9 @@ export class ArticleController {
       data,
     };
   }
+
+  @ApiTags('Categories')
+  @ApiDocsUpdateCategories()
   @Patch('categories/:categoryId')
   @HttpCode(200)
   async categoryUpdate(
@@ -205,6 +246,8 @@ export class ArticleController {
     };
   }
 
+  @ApiTags('Categories')
+  @ApiDocsDeleteCategories()
   @Delete('categories/:categoryId')
   @HttpCode(200)
   async categoryDelete(
@@ -217,6 +260,8 @@ export class ArticleController {
     };
   }
 
+  @ApiTags('Articles')
+  @ApiDocsGetOneArticle()
   @Get(':articleId')
   @HttpCode(200)
   async articleGetById(
@@ -229,6 +274,8 @@ export class ArticleController {
     };
   }
 
+  @ApiTags('Articles')
+  @ApiDocsUpdateArticle()
   @Patch(':articleId')
   @Roles(['admin'])
   @HttpCode(200)
@@ -255,6 +302,8 @@ export class ArticleController {
     };
   }
 
+  @ApiTags('Articles')
+  @ApiDocsDeleteArticle()
   @Delete(':articleId')
   @HttpCode(200)
   async articleDelete(
@@ -267,6 +316,8 @@ export class ArticleController {
     };
   }
 
+  @ApiTags('Articles')
+  @ApiDocsGetLabelsByArticle()
   @Get(':articleId/labels')
   @HttpCode(200)
   async labelsRelateOnArticle(

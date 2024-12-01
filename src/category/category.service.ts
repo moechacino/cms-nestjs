@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
-import { CategoryRequestDto, CategoryResponse } from './category.dto';
+import { CategoryRequestDto, CategoryResponse } from './category.model';
 import { toCategoriesResponse, toCategoryResponse } from './category.mapper';
 
 @Injectable()

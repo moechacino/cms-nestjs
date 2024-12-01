@@ -10,7 +10,7 @@ import { UserTestService } from './user-test.service';
 import {
   CategoryRequestDto,
   CategoryResponse,
-} from '../src/category/category.dto';
+} from '../src/category/category.model';
 import { CategoryTestService } from './category-test.service';
 describe('ArticleController (e2e)', () => {
   let app: INestApplication;

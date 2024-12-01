@@ -10,7 +10,7 @@ import {
   LabelCreateRequestDto,
   LabelResponse,
   LabelUpdateRequestDto,
-} from '../src/label/label.dto';
+} from '../src/label/label.model';
 import { WebResponse } from '../src/common/types/web.type';
 import { UserTestService } from './user-test.service';
 

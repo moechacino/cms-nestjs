@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
@@ -12,40 +12,40 @@ import {
 } from 'class-validator';
 
 export class ArticleCreateRequestDto {
-  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   title: string;
 
-  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   content: string;
 
-  @ApiProperty()
   @IsOptional()
   @IsString()
   author?: string;
 
-  @ApiProperty()
   @IsNotEmpty()
-  @IsNumber()
   @Type(() => Number)
+  @IsNumber()
   categoryId: number;
 
-  @ApiProperty({ type: [Number] })
-  @IsNotEmpty()
+  @IsOptional()
   @Transform(({ value }) => {
-    if (!Array.isArray(value)) {
-      if (isNaN(Number(value)))
-        throw new BadRequestException(
-          'label id must be number or array of number',
-        );
+    console.log(value);
+    console.log(typeof value);
+    if (value === '' || !value) return [];
 
-      return [parseInt(value, 10)];
+    let parsed: [];
+    try {
+      parsed = JSON.parse(value);
+    } catch (e) {
+      throw new BadRequestException('labelsId must be a valid JSON array.');
     }
 
-    return value.map((val) => {
+    if (!Array.isArray(parsed)) {
+      throw new BadRequestException('labelsId must be an array of numbers.');
+    }
+    return parsed.map((val) => {
       if (isNaN(Number(val))) {
         throw new BadRequestException(
           `Invalid label ID: ${val}. Must be a number.`,
@@ -58,40 +58,38 @@ export class ArticleCreateRequestDto {
 }
 
 export class ArticleUpdateRequestDto {
-  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   title?: string;
 
-  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   content?: string;
 
-  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   author?: string;
 
-  @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
   categoryId?: number;
 
-  @ApiProperty({ type: [Number], required: false })
   @IsOptional()
   @Transform(({ value }) => {
-    if (!Array.isArray(value)) {
-      if (isNaN(Number(value)))
-        throw new BadRequestException(
-          'label id must be number or array of number',
-        );
+    if (value === '' || !value) return [];
 
-      return [parseInt(value, 10)];
+    let parsed: [];
+    try {
+      parsed = JSON.parse(value);
+    } catch (e) {
+      throw new BadRequestException('labelsId must be a valid JSON array.');
     }
 
-    return value.map((val) => {
+    if (!Array.isArray(parsed)) {
+      throw new BadRequestException('labelsId must be an array of numbers.');
+    }
+    return parsed.map((val) => {
       if (isNaN(Number(val))) {
         throw new BadRequestException(
           `Invalid label ID: ${val}. Must be a number.`,
@@ -101,6 +99,9 @@ export class ArticleUpdateRequestDto {
     });
   })
   labelsId?: number[];
+
+  @IsOptional()
+  newThumbnail?: Express.Multer.File;
 }
 
 export class ArticleQueryRequestDto {
@@ -129,11 +130,9 @@ export class ArticleQueryRequestDto {
 
   @IsOptional()
   @Transform(({ value }) => {
-    console.log(value);
-    console.log(typeof value);
-    if (value === '') return [];
-    let parsed: [];
+    if (value === '' || !value) return [];
 
+    let parsed: [];
     try {
       parsed = JSON.parse(value);
     } catch (e) {

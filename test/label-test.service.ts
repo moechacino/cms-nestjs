@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../src/common/prisma.service';
-import { LabelResponse } from '../src/label/label.dto';
+import { LabelResponse } from '../src/label/label.model';
 
 @Injectable()
 export class LabelTestService {

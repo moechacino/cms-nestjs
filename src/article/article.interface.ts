@@ -1,5 +1,5 @@
 import { DataWithPagination } from '../common/types/web.type';
-import { LabelResponse } from '../label/label.dto';
+import { LabelResponse } from '../label/label.model';
 import {
   ArticleCreateRequestDto,
   ArticleQueryRequestDto,

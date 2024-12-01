@@ -6,7 +6,7 @@ import {
   LabelCreateRequestDto,
   LabelResponse,
   LabelUpdateRequestDto,
-} from './label.dto';
+} from './label.model';
 import { toLabelResponse, toLabelsResponse } from './label.mapper';
 
 @Injectable()
@@ -32,10 +32,9 @@ export class LabelService {
   }
 
   async getById(labelId: number): Promise<LabelResponse> {
-    const label = await this.prismaService.label.findUnique({
+    const label = await this.prismaService.label.findUniqueOrThrow({
       where: { labelId },
     });
-    if (!label) throw new NotFoundException(`${labelId} not found`);
     return toLabelResponse(label);
   }
 

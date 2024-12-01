@@ -1,5 +1,5 @@
 import { Label } from '@prisma/client';
-import { LabelResponse } from './label.dto';
+import { LabelResponse } from './label.model';
 
 export function toLabelResponse(label: Label): LabelResponse {
   return {

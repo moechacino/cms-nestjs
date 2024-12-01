@@ -72,7 +72,7 @@ export function ApiDocsUserLogin() {
 
 export function ApiDocsUserLogout() {
   return applyDecorators(
-    ApiBearerAuth('token'),
+    ApiBearerAuth('access-token'),
     ApiResponse({
       status: 200,
       example: {

@@ -48,18 +48,21 @@ async function bootstrap() {
         scheme: 'bearer',
         bearerFormat: 'JWT',
       },
-      'token',
+      'access-token',
     )
     .build();
   const documentFactory = () =>
     SwaggerModule.createDocument(app, config, {
       autoTagControllers: false,
+      operationIdFactory: (controllerKey: string, methodKey: string) =>
+        methodKey,
     });
   SwaggerModule.setup('/', app, documentFactory, {
     jsonDocumentUrl: 'docs/json',
     swaggerOptions: {
       withCredentials: true,
     },
+    customSiteTitle: 'CMS Moe Docs',
   });
 
   await app.listen(configService.get('APP_PORT'));

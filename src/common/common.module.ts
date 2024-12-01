@@ -26,7 +26,7 @@ import { ErrorFilter } from './error.filter';
         forbidNonWhitelisted: true,
         transform: true,
         transformOptions: {
-          enableImplicitConversion: true,
+          enableImplicitConversion: false,
         },
         stopAtFirstError: true,
         exceptionFactory: (errors) => {
