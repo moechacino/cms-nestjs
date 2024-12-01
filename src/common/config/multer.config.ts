@@ -22,7 +22,7 @@ export function getMulterConfig(storageDirectory: string): Options {
         cb(null, storageDirectory);
       },
       filename: (req, file, cb) => {
-        const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}_${file.originalname}`;
+        const filename = `${file.originalname}_${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
         cb(null, filename);
       },

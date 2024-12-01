@@ -106,19 +106,15 @@ export class ArticleUpdateRequestDto {
 
 export class ArticleQueryRequestDto {
   @IsOptional()
-  @Transform(({ value }: { value: string }) => {
-    if (value === '' || isNaN(Number(value))) return 16;
-
-    return parseInt(value);
-  })
+  @Transform(({ value }: { value: string }) =>
+    !isNaN(Number(value)) && value !== null ? parseInt(value) : 16,
+  )
   take: number = 16;
 
   @IsOptional()
-  @Transform(({ value }: { value: string }) => {
-    if (value === '' || isNaN(Number(value))) return 1;
-
-    return parseInt(value);
-  })
+  @Transform(({ value }: { value: string }) =>
+    !isNaN(Number(value)) && value !== null ? parseInt(value) : 16,
+  )
   page: number = 1;
 
   @IsOptional()
